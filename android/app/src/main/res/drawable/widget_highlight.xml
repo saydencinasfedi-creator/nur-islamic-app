@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Next prayer" highlight — same bright green as the app's primary brand color, applied
+     via setBackgroundResource in PrayerTimesWidgetProvider to whichever area (top big
+     countdown, or a bottom-row prayer cell) currently represents the next prayer. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#13EC92" />
+    <corners android:radius="12dp" />
+</shape>

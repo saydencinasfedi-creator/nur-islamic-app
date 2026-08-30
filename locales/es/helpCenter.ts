@@ -1,0 +1,16 @@
+export const helpCenter = {
+    'helpCenter.title': 'Centro de ayuda',
+    'helpCenter.heading': '¿Cómo podemos ayudarte?',
+    'helpCenter.subheading': 'Encuentra respuestas a tus preguntas o contáctanos.',
+    'helpCenter.searchPlaceholder': "Busca un problema (p. ej. 'Horarios de oración')",
+    'helpCenter.categoryGuides': 'Guías',
+    'helpCenter.categoryPrivacy': 'Privacidad',
+    'helpCenter.commonQuestions': 'Preguntas frecuentes',
+    'helpCenter.faqAdjustPrayerTimes': '¿Cómo ajusto los horarios de oración?',
+    'helpCenter.faqDataPrivate': '¿Mis datos están realmente protegidos?',
+    'helpCenter.faqAiContent': '¿Cómo funciona el contenido generado por IA?',
+    'helpCenter.faqCancelSubscription': 'Cancelar suscripción',
+    'helpCenter.contactSupport': 'Contactar con soporte',
+    'helpCenter.chatWithUs': 'Chatea con nosotros',
+    'helpCenter.repliesTime': 'Normalmente respondemos en menos de 5 minutos',
+} as const;

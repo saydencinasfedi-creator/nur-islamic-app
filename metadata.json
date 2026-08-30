@@ -1,0 +1,9 @@
+
+{
+  "name": "Nur - Islamic Spiritual Companion",
+  "description": "A privacy-first, ad-free spiritual sanctuary for daily Islamic practice, featuring prayer times, Quran, Tasbih, and an AI-powered spiritual companion.",
+  "requestFramePermissions": [
+    "geolocation",
+    "microphone"
+  ]
+}

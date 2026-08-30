@@ -1,0 +1,16 @@
+export const goalFormSheet = {
+    'goalFormSheet.editTitle': 'Editar meta',
+    'goalFormSheet.addTitle': 'Añadir meta',
+    'goalFormSheet.goalNameLabel': 'Nombre de la meta',
+    'goalFormSheet.goalNamePlaceholder': 'p. ej. Leer el Corán',
+    'goalFormSheet.typeLabel': 'Tipo',
+    'goalFormSheet.typeYesNo': 'Sí / No',
+    'goalFormSheet.typeAmount': 'Cantidad',
+    'goalFormSheet.targetAmountLabel': 'Cantidad objetivo',
+    'goalFormSheet.targetAmountHint': 'p. ej. 100 para "100 dhikr" o 1 para "leer 1 página"',
+    'goalFormSheet.errorEnterTarget': 'Introduce una cantidad objetivo.',
+    'goalFormSheet.errorNumbersOnly': 'Solo números — sin letras, comas ni decimales.',
+    'goalFormSheet.errorPositiveNumber': 'Debe ser un número positivo mayor que 0.',
+    'goalFormSheet.saveChanges': 'Guardar cambios',
+    'goalFormSheet.deleteGoal': 'Eliminar meta',
+} as const;

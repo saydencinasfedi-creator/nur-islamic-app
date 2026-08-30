@@ -1,0 +1,16 @@
+export const bottomNav = {
+    'bottomNav.shortcutAddDailyGoal': 'Añadir meta diaria',
+    'bottomNav.shortcutTasbih': 'Tasbih',
+    'bottomNav.shortcutQibla': 'Qibla',
+    'bottomNav.shortcutQuran': 'Corán',
+    'bottomNav.shortcutFullSurahs': 'Suras completas',
+    'bottomNav.shortcutDua': 'Dua',
+    'bottomNav.shortcutReflections': 'Reflexiones',
+    'bottomNav.shortcutAiCompanion': 'Nur AI',
+    'bottomNav.shortcutCommunity': 'Comunidad',
+    'bottomNav.shortcutNotifications': 'Notificaciones',
+    'bottomNav.shortcutProfile': 'Perfil',
+    'bottomNav.noShortcutsYet': 'Todavía no hay accesos — edítalos abajo.',
+    'bottomNav.editShortcuts': 'Editar accesos',
+    'bottomNav.pickUpTo': 'Elige hasta {{max}} para el menú "+"',
+} as const;

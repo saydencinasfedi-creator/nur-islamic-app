@@ -1,0 +1,8 @@
+# Netlify / Cloudflare Pages headers file.
+# Ensures the APK is served with the correct MIME type so Android recognises it
+# as an installable package instead of a generic download that "fails" at the end.
+
+/*.apk
+  Content-Type: application/vnd.android.package-archive
+  Content-Disposition: attachment
+  Cache-Control: public, max-age=300

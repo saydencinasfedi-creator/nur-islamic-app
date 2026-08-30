@@ -1,0 +1,93 @@
+apply plugin: 'com.android.application'
+
+// Release signing config, loaded from android/key.properties (git-ignored). If that file is
+// absent (e.g. a fresh checkout without the keystore) the release build fails loudly rather
+// than silently falling back to the debug key -- shipping a debug-signed APK to users who
+// already have a release-signed one causes "App not installed" (signature mismatch).
+def keystorePropsFile = rootProject.file("key.properties")
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+}
+
+android {
+    namespace = "com.fedi.nur"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.fedi.nur"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 2
+        versionName "1.0.1"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (keystoreProps.containsKey("storeFile")) {
+                storeFile file(keystoreProps["storeFile"])
+                storePassword keystoreProps["storePassword"]
+                keyAlias keystoreProps["keyAlias"]
+                keyPassword keystoreProps["keyPassword"]
+            }
+            // Sign with schemes v1, v2 and v3: v1 (JAR) keeps older / OEM sideload
+            // installers happy, v2/v3 are used by modern Android. v2-only APKs fail to
+            // parse on some Samsung / Xiaomi package installers.
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Always the release key -- no silent fallback to the debug key. If key.properties
+            // is missing, only the release tasks fail (with "storeFile not set"); debug builds
+            // are unaffected. Never distribute a debug-signed APK: a phone that already has the
+            // release build refuses it with "App not installed" (signature mismatch).
+            signingConfig signingConfigs.release
+        }
+    }
+
+    // Friendly, early failure for release builds when the keystore is not present.
+    gradle.taskGraph.whenReady { graph ->
+        boolean buildingRelease = graph.allTasks.any { it.name.toLowerCase().contains("release") }
+        if (buildingRelease && !keystoreProps.containsKey("storeFile")) {
+            throw new GradleException("Missing android/key.properties (and the nur-release.keystore it points to): cannot sign the release build. Restore both before running a release task.")
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

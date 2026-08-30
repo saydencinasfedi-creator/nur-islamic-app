@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Custom notification content for the permanent "next prayer" notification
+     (PrayerCountdownReceiver.java). A plain Notification.Builder#setUsesChronometer only
+     ticks the number with no way to add a leading "+"/"-", so this uses a real Chronometer
+     widget instead — RemoteViews has built-in support for setChronometer()/
+     setChronometerCountDown(), so it still ticks live via the system without our process
+     needing to stay running. Text is hardcoded white rather than the usual
+     ?android:attr/textColorPrimary/Secondary theme attributes: on this device's heavily
+     themed notification shade (Theme Park icon pack etc.) those attributes weren't resolving
+     to a readable color against the shade's black background. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/prayer_countdown_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <Chronometer
+            android:id="@+id/prayer_countdown_timer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="#FFFFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/prayer_countdown_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="#CCFFFFFF"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/prayer_countdown_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="#99FFFFFF"
+        android:textSize="11sp" />
+</LinearLayout>

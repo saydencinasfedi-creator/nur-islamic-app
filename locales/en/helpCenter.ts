@@ -1,0 +1,16 @@
+export const helpCenter = {
+    'helpCenter.title': 'Help Center',
+    'helpCenter.heading': 'How can we help?',
+    'helpCenter.subheading': 'Find answers to your questions or get in touch.',
+    'helpCenter.searchPlaceholder': "Search for issues (e.g. 'Prayer times')",
+    'helpCenter.categoryGuides': 'Guides',
+    'helpCenter.categoryPrivacy': 'Privacy',
+    'helpCenter.commonQuestions': 'Common Questions',
+    'helpCenter.faqAdjustPrayerTimes': 'How do I adjust prayer times?',
+    'helpCenter.faqDataPrivate': 'Is my data really private?',
+    'helpCenter.faqAiContent': 'How does the AI content work?',
+    'helpCenter.faqCancelSubscription': 'Cancel subscription',
+    'helpCenter.contactSupport': 'Contact Support',
+    'helpCenter.chatWithUs': 'Chat with Us',
+    'helpCenter.repliesTime': 'Typically replies in under 5 mins',
+} as const;

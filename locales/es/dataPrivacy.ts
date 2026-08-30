@@ -1,0 +1,16 @@
+export const dataPrivacy = {
+    'dataPrivacy.title': 'Privacidad de datos',
+    'dataPrivacy.localByDefault': 'Local por defecto',
+    'dataPrivacy.subtitle': 'Tu camino espiritual es personal. Aquí tienes exactamente qué pasa con tus datos.',
+    'dataPrivacy.amanahTitle': 'Nuestra Amanah (confianza)',
+    'dataPrivacy.amanahDesc': 'Tratamos tu privacidad como una confianza sagrada ("Amanah"). Tus rezos, conteos de dhikr, marcadores y ajustes se guardan localmente en este dispositivo — no en ningún servidor nuestro.',
+    'dataPrivacy.whatActuallyHappens': 'Qué pasa en realidad',
+    'dataPrivacy.localStorage': 'Almacenamiento local',
+    'dataPrivacy.localStorageDesc': 'Los rezos, hábitos, marcadores y diarios se guardan en este dispositivo.',
+    'dataPrivacy.googleEmailSignIn': 'Inicio de sesión con Google / Correo',
+    'dataPrivacy.googleEmailSignInDesc': 'Iniciar sesión hoy solo establece un nombre de usuario en este dispositivo — no sincroniza tus datos con ningún servidor.',
+    'dataPrivacy.prayerTimesQibla': 'Horarios de rezo y Qibla',
+    'dataPrivacy.prayerTimesQiblaDesc': 'Tus coordenadas se envían a la API de Aladhan para calcular horarios precisos — nada vinculado a tu identidad.',
+    'dataPrivacy.noAds': 'Sin anuncios',
+    'dataPrivacy.noAdsDesc': 'No mostramos anuncios ni rastreadores de terceros en la app.',
+} as const;

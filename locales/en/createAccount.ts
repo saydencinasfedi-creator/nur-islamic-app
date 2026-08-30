@@ -1,0 +1,15 @@
+export const createAccount = {
+    'createAccount.passwordsDoNotMatch': 'Passwords do not match',
+    'createAccount.title': 'Create your account',
+    'createAccount.subtitle': 'Sign up to save your progress and sync it across devices.',
+    'createAccount.fullNameLabel': 'Full Name',
+    'createAccount.fullNamePlaceholder': 'John Doe',
+    'createAccount.emailLabel': 'Email',
+    'createAccount.emailPlaceholder': 'you@example.com',
+    'createAccount.passwordLabel': 'Password',
+    'createAccount.forgotPassword': 'Forgot password?',
+    'createAccount.confirmPasswordLabel': 'Confirm Password',
+    'createAccount.signUp': 'Sign Up',
+    'createAccount.alreadyHaveAccount': 'Already have an account? ',
+    'createAccount.logIn': 'Log in',
+} as const;

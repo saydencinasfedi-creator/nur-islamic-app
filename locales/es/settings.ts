@@ -1,0 +1,17 @@
+export const settings = {
+    'settings.title': 'Ajustes',
+    'settings.system': 'Sistema',
+    'settings.darkMode': 'Modo oscuro',
+    'settings.lightMode': 'Modo claro',
+    'settings.guest': 'Invitado',
+    'settings.activeSince': 'Activo desde {{year}}',
+    'settings.general': 'General',
+    'settings.language': 'Idioma',
+    'settings.appearance': 'Apariencia',
+    'settings.adhanSettings': 'Ajustes de Adhan',
+    'settings.privacyTrust': 'Privacidad y confianza',
+    'settings.dataPrivacy': 'Privacidad de datos',
+    'settings.contentSourcesAi': 'Fuentes de contenido e IA',
+    'settings.notifications': 'Notificaciones',
+    'settings.prayerTimes': 'Horarios de rezo',
+} as const;

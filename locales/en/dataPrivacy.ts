@@ -1,0 +1,16 @@
+export const dataPrivacy = {
+    'dataPrivacy.title': 'Data Privacy',
+    'dataPrivacy.localByDefault': 'Local by Default',
+    'dataPrivacy.subtitle': "Your spiritual journey is personal. Here's exactly what happens with your data.",
+    'dataPrivacy.amanahTitle': 'Our Amanah (Trust)',
+    'dataPrivacy.amanahDesc': 'We treat your privacy as a sacred trust ("Amanah"). Your prayers, dhikr counts, bookmarks, and settings are stored locally on this device — not on any server we run.',
+    'dataPrivacy.whatActuallyHappens': 'What Actually Happens',
+    'dataPrivacy.localStorage': 'Local Storage',
+    'dataPrivacy.localStorageDesc': 'Prayers, habits, bookmarks, and journals are stored on this device.',
+    'dataPrivacy.googleEmailSignIn': 'Google / Email Sign-In',
+    'dataPrivacy.googleEmailSignInDesc': "Signing in today only sets a display name on this device — it doesn't sync your data to any server.",
+    'dataPrivacy.prayerTimesQibla': 'Prayer Times & Qibla',
+    'dataPrivacy.prayerTimesQiblaDesc': 'Your coordinates are sent to the Aladhan API to calculate accurate times — nothing tied to your identity.',
+    'dataPrivacy.noAds': 'No Ads',
+    'dataPrivacy.noAdsDesc': "We don't run ads or third-party trackers in the app.",
+} as const;

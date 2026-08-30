@@ -1,0 +1,16 @@
+export const goalFormSheet = {
+    'goalFormSheet.editTitle': 'Edit Goal',
+    'goalFormSheet.addTitle': 'Add Goal',
+    'goalFormSheet.goalNameLabel': 'Goal Name',
+    'goalFormSheet.goalNamePlaceholder': 'e.g. Read Quran',
+    'goalFormSheet.typeLabel': 'Type',
+    'goalFormSheet.typeYesNo': 'Yes / No',
+    'goalFormSheet.typeAmount': 'Amount',
+    'goalFormSheet.targetAmountLabel': 'Target Amount',
+    'goalFormSheet.targetAmountHint': 'e.g. 100 for "100 dhikr" or 1 for "read 1 page"',
+    'goalFormSheet.errorEnterTarget': 'Enter a target amount.',
+    'goalFormSheet.errorNumbersOnly': 'Numbers only — no letters, commas, or decimals.',
+    'goalFormSheet.errorPositiveNumber': 'Must be a positive number greater than 0.',
+    'goalFormSheet.saveChanges': 'Save Changes',
+    'goalFormSheet.deleteGoal': 'Delete Goal',
+} as const;
