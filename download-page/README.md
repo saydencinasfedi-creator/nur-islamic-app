@@ -12,30 +12,29 @@ gente las instrucciones para Samsung / Xiaomi / Play Protect.
 | `_headers` | Cabeceras para Netlify / Cloudflare Pages (MIME `application/vnd.android.package-archive`). |
 | `icon.png` | Logo / favicon (copia de `public/icon.png`). |
 
-## Publicar (elige una)
+## Estado actual (2026-08-30)
 
-### Opción 1 — GitHub Releases (recomendada como origen del APK)
+- Repo: <https://github.com/saydencinasfedi-creator/nur-islamic-app> (público)
+- APK: adjunto al release **v1.0.1** como `nur.apk`. URL directa siempre-la-última:
+  `https://github.com/saydencinasfedi-creator/nur-islamic-app/releases/latest/download/nur.apk`
+  (sirve con `Content-Type: application/vnd.android.package-archive`).
+- `index.html` ya apunta a esa URL.
+- Página publicada con **GitHub Pages** desde `main` / carpeta `/download-page`.
 
-1. `git init` en la raíz del proyecto si aún no es un repo, y súbelo a GitHub.
-   Antes del primer `push` verifica que NO se suben secretos:
-   - `.env.local` → cubierto por `*.local` y `.env*` en el `.gitignore` raíz.
-   - `android/key.properties` y `android/app/*.keystore` → cubiertos por `android/.gitignore`.
-   Comprueba con `git status` que ninguno aparece como «to be committed».
-2. En GitHub → **Releases** → **Draft a new release** → tag `v1.0.1`.
-3. Adjunta `app-release.apk` como **asset** y renómbralo a `nur.apk`.
-4. La URL estable de descarga directa es:
-   `https://github.com/USUARIO/REPO/releases/latest/download/nur.apk`
-5. En `index.html`, cambia `href="nur.apk"` por esa URL. Ya puedes compartir el enlace a
-   la página (o directamente el enlace del release).
+## Publicar una versión nueva del APK
 
-### Opción 2 — Netlify / Cloudflare Pages / GitHub Pages
+1. Sube `versionCode` en `android/app/build.gradle`, `npm run build && npx cap sync android`,
+   `cd android && ./gradlew assembleRelease`.
+2. `cp android/app/build/outputs/apk/release/app-release.apk download-page/nur.apk`
+3. `gh release create vX.Y.Z download-page/nur.apk --title "Nur X.Y.Z" --notes "..."`
+   (o `gh release upload vX.Y.Z download-page/nur.apk --clobber` sobre un release existente).
+   La URL `releases/latest/download/nur.apk` pasa a servir la nueva automáticamente.
 
-1. Sube el APK a esta carpeta como `nur.apk` (junto a `index.html`).
-2. Despliega **solo esta carpeta** (`download-page/`) como sitio estático.
-   - Netlify: arrastra la carpeta a app.netlify.com, o `netlify deploy --dir download-page`.
-   - Cloudflare Pages / GitHub Pages: raíz de publicación = `download-page`.
-3. `_headers` se aplica solo en Netlify y Cloudflare Pages. En GitHub Pages el `.apk` ya
-   se sirve con el MIME correcto por defecto.
+## Alternativa de hosting (Netlify / Cloudflare Pages)
+
+`_headers` fija el MIME correcto para el `.apk` en Netlify y Cloudflare Pages. Despliega
+**solo** la carpeta `download-page/`. En GitHub Pages el `.apk` ya se sirve bien y el
+`_headers` se ignora (no molesta).
 
 ## Cómo repartirlo
 
