@@ -53,7 +53,7 @@
   <div class="card">
     <!-- APK servido como asset del GitHub Release (siempre la última versión). -->
     <a class="btn" href="https://github.com/saydencinasfedi-creator/nur-islamic-app/releases/latest/download/nur.apk">Descargar Nur para Android</a>
-    <p class="meta">Versión 1.0.1 · Android 7.0 o superior · ~11 MB</p>
+    <p class="meta" id="verMeta">Android 7.0 o superior · ~11 MB</p>
   </div>
 
   <div class="warn">
@@ -112,5 +112,19 @@
   </footer>
 
 </div>
+<script>
+  // Pulls the tag from the latest GitHub Release so this number never goes stale
+  // again — no manual edit needed on each release. Silently no-ops on failure
+  // (rate-limited/offline), leaving the fallback text from the markup above.
+  fetch('https://api.github.com/repos/saydencinasfedi-creator/nur-islamic-app/releases/latest')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (data) {
+      if (!data || !data.tag_name) return;
+      var el = document.getElementById('verMeta');
+      var version = data.tag_name.replace(/^v/, '');
+      el.textContent = 'Versión ' + version + ' · ' + el.textContent;
+    })
+    .catch(function () {});
+</script>
 </body>
 </html>
