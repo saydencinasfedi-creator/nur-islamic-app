@@ -320,7 +320,7 @@ const AppContent: React.FC = () => {
       case 'reflections': return <Reflections navigate={navigate} onBack={() => navigate('dashboard')} />;
       case 'dua': return <Supplications navigate={navigate} onBack={() => navigate('dashboard')} />;
       case 'chat': return <AICompanion navigate={navigate} user={user} />;
-      case 'community': return <Community navigate={navigate} />;
+      case 'community': return <Community navigate={navigate} setNavHidden={setNavHiddenOverride} />;
       case 'profile': return <Profile navigate={navigate} user={user} onSignOut={handleSignOut} />;
       case 'settings': return <Settings navigate={navigate} onBack={() => navigate('profile')} darkMode={darkMode} useSystemTheme={useSystemTheme} />;
       case 'appearance': return <AppearanceSettings darkMode={darkMode} setDarkMode={setDarkMode} useSystemTheme={useSystemTheme} toggleUseSystemTheme={toggleUseSystemTheme} onBack={() => navigate('settings')} onDone={commitSettingsAndExit} />;

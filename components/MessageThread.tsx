@@ -220,7 +220,7 @@ function MessageThread<T extends ThreadMessage>({
 
   return (
     <div className={`flex flex-col ${heightClass ?? 'h-[calc(100vh-14rem)]'}`}>
-      <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-3">
+      <div ref={scrollRef} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-3 space-y-3">
         {pinnedCard}
         {loading ? (
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">{t('community.loading')}</p>
@@ -276,7 +276,7 @@ function MessageThread<T extends ThreadMessage>({
       </div>
 
       {(replyTarget || editTarget) && (
-        <div className="flex items-center gap-2 px-4 pt-2">
+        <div className="flex items-center gap-2 px-4 pt-2 shrink-0">
           <div className="flex-1 min-w-0 bg-gray-100 dark:bg-white/5 border-l-4 border-primary rounded-lg px-3 py-1.5">
             <p className="text-[11px] font-bold text-primary">
               {editTarget ? t('community.editingMessage') : t('community.replyingTo', { name: replyTarget?.author?.displayName || '' })}
@@ -289,7 +289,10 @@ function MessageThread<T extends ThreadMessage>({
         </div>
       )}
 
-      <div className="flex items-center gap-2 p-3 border-t border-gray-100 dark:border-white/5">
+      <div
+        className="flex items-center gap-2 p-3 border-t border-gray-100 dark:border-white/5 shrink-0"
+        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+      >
         <input
           ref={inputRef}
           value={draft}

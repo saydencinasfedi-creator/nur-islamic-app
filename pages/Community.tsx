@@ -34,6 +34,10 @@ import type { TranslationKey } from '../services/i18n';
 
 interface CommunityProps {
   navigate: (page: PageId) => void;
+  // The bottom nav is hoisted up to App.tsx — this lets any pushed sub-view
+  // (circle detail, chat, DM thread, …) hide it, since App.tsx has no
+  // visibility into this page's internal `view` state. Same pattern as Quran.
+  setNavHidden?: (hidden: boolean) => void;
 }
 
 type TopTab = 'home' | 'challenges' | 'circles' | 'duas';
@@ -60,7 +64,7 @@ const fmtDate = (iso: string) => new Date(iso + (iso.length === 10 ? 'T00:00:00'
 
 // ===========================================================================
 
-const Community: React.FC<CommunityProps> = ({ navigate }) => {
+const Community: React.FC<CommunityProps> = ({ navigate, setNavHidden }) => {
   const { t } = useUser();
   const { bypassed, isGuest, authUserId, pendingInviteCode, clearPendingInviteCode } = useAuth();
 
@@ -130,6 +134,13 @@ const Community: React.FC<CommunityProps> = ({ navigate }) => {
     if (bypassed) return;
     return subscribeSalawat(setSalawat);
   }, [bypassed]);
+
+  // Hide the floating bottom nav on every pushed sub-view (circle detail, chat,
+  // reflection, challenge, DM thread, …) — it only makes sense at the top level.
+  useEffect(() => {
+    setNavHidden?.(view !== 'top');
+    return () => setNavHidden?.(false);
+  }, [view, setNavHidden]);
 
   // ---- hardware back ----
   useEffect(() => {
@@ -672,9 +683,11 @@ const CircleDetail: React.FC<{
   ];
   const visibleTabs = isMember ? tabs : tabs.filter(x => x.id === 'info');
 
+  const isChatTab = isMember && tab === 'chat';
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="flex items-center gap-3 p-6 pt-12 pb-3">
+    <div className={`flex flex-col ${isChatTab ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
+      <header className="flex items-center gap-3 p-6 pt-12 pb-3 shrink-0">
         <button onClick={onBack} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
           <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
         </button>
@@ -689,7 +702,7 @@ const CircleDetail: React.FC<{
         )}
       </header>
 
-      <div className="flex gap-2 px-6 pb-4 overflow-x-auto no-scrollbar">
+      <div className="flex gap-2 px-6 pb-4 overflow-x-auto no-scrollbar shrink-0">
         {visibleTabs.map(x => (
           <button key={x.id} onClick={() => onTab(x.id)} className={`h-9 shrink-0 px-4 rounded-full text-sm font-medium transition-colors ${tab === x.id ? 'bg-primary text-background-dark font-bold' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300'}`}>
             {t(x.key)}
@@ -747,14 +760,16 @@ const CircleDetail: React.FC<{
         </div>
       )}
 
-      {isMember && tab === 'chat' && (
-        <ChatTab
-          groupId={groupId}
-          isModerator={isModerator}
-          onGuestAction={guard}
-          verseOfDay={group.verseOfDay}
-          onReflectOnVerse={onReflectOnVerse}
-        />
+      {isChatTab && (
+        <div className="flex-1 min-h-0 flex flex-col">
+          <ChatTab
+            groupId={groupId}
+            isModerator={isModerator}
+            onGuestAction={guard}
+            verseOfDay={group.verseOfDay}
+            onReflectOnVerse={onReflectOnVerse}
+          />
+        </div>
       )}
 
       {isMember && tab === 'reflections' && (
