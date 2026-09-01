@@ -314,7 +314,7 @@ export default Community;
 const TopHeader: React.FC<{ navigate: (p: PageId) => void }> = ({ navigate }) => {
   const { t } = useUser();
   return (
-    <header className="flex items-center justify-between p-6 pt-8">
+    <header className="sticky sticky-safe-top z-40 flex items-center justify-between p-6 pt-8 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm">
       <div className="flex flex-col">
         <span className="text-xs font-medium text-primary uppercase tracking-wider mb-1">{t('community.theUmmah')}</span>
         <h2 className="text-slate-900 dark:text-white text-2xl font-bold leading-tight tracking-tight">{t('community.title')}</h2>
@@ -359,7 +359,7 @@ const TopTabs: React.FC<{ value: TopTab; onChange: (t: TopTab) => void }> = ({ v
 
 const SubScreen: React.FC<{ title: string; onBack: () => void; children: React.ReactNode; right?: React.ReactNode }> = ({ title, onBack, children, right }) => (
   <div className="flex flex-col min-h-screen">
-    <header className="flex items-center gap-3 p-6 pt-12 pb-4">
+    <header className="sticky sticky-safe-top z-40 flex items-center gap-3 p-6 pt-12 pb-4 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm">
       <button onClick={onBack} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
         <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
       </button>
@@ -686,8 +686,8 @@ const CircleDetail: React.FC<{
   const isChatTab = isMember && tab === 'chat';
 
   return (
-    <div className={`flex flex-col ${isChatTab ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
-      <header className="flex items-center gap-3 p-6 pt-12 pb-3 shrink-0">
+    <div className={`flex flex-col ${isChatTab ? 'h-dvh overflow-hidden' : 'min-h-screen'}`}>
+      <header className="sticky sticky-safe-top z-40 flex items-center gap-3 p-6 pt-12 pb-3 shrink-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm">
         <button onClick={onBack} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
           <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
         </button>

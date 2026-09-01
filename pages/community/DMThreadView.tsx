@@ -22,8 +22,8 @@ const DMThreadView: React.FC<Props> = ({ threadId, otherProfile, onBack, onGuest
   useEffect(() => { dm.markThreadRead(threadId).catch(() => {}); }, [threadId]);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <header className="flex items-center gap-3 p-6 pt-12 pb-3 shrink-0">
+    <div className="flex flex-col h-dvh overflow-hidden">
+      <header className="sticky sticky-safe-top z-40 flex items-center gap-3 p-6 pt-12 pb-3 shrink-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm">
         <button onClick={onBack} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
           <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
         </button>
