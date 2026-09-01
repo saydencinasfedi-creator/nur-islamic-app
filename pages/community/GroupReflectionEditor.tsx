@@ -68,7 +68,7 @@ const GroupReflectionEditor: React.FC<Props> = ({ groupId, existing, prefillRef,
 
   return (
     <div className="flex flex-col min-h-screen bg-background-light dark:bg-background-dark">
-      <header className="sticky sticky-safe-top z-40 flex items-center gap-3 p-6 pt-12 pb-4 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm">
+      <header className="sticky sticky-safe-top z-40 flex items-center gap-3 px-6 pt-4 pb-4 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm">
         <button onClick={onCancel} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
           <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
         </button>

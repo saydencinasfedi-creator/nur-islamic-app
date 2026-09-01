@@ -218,9 +218,15 @@ function MessageThread<T extends ThreadMessage>({
     if (!m.deletedAt) setActionMessage(m);
   };
 
+  const composerOpen = !!(replyTarget || editTarget);
+
   return (
     <div className={`flex flex-col ${heightClass ?? 'h-[calc(100vh-14rem)]'}`}>
-      <div ref={scrollRef} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-3 space-y-3">
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className={`flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-3 space-y-3 ${composerOpen ? 'pb-36' : 'pb-24'}`}
+      >
         {pinnedCard}
         {loading ? (
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">{t('community.loading')}</p>
@@ -275,39 +281,49 @@ function MessageThread<T extends ThreadMessage>({
         )}
       </div>
 
-      {(replyTarget || editTarget) && (
-        <div className="flex items-center gap-2 px-4 pt-2 shrink-0">
-          <div className="flex-1 min-w-0 bg-gray-100 dark:bg-white/5 border-l-4 border-primary rounded-lg px-3 py-1.5">
-            <p className="text-[11px] font-bold text-primary">
-              {editTarget ? t('community.editingMessage') : t('community.replyingTo', { name: replyTarget?.author?.displayName || '' })}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{(editTarget ?? replyTarget)?.body}</p>
-          </div>
-          <button onClick={cancelComposerContext} className="text-gray-400 hover:text-red-500 shrink-0">
-            <span className="material-symbols-outlined text-lg">close</span>
-          </button>
-        </div>
-      )}
+      {/* Fixed to the real viewport bottom — same technique as AICompanion's composer —
+          instead of being a flex sibling of the scroll area above. That keeps it in place
+          and fully visible no matter what the keyboard or the surrounding page does; the
+          scroll area's pb-24/pb-36 above reserves room so the last message isn't hidden
+          under it. */}
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-30 pointer-events-none">
+        <div className="absolute bottom-0 w-full h-20 bg-gradient-to-t from-background-light dark:from-background-dark via-background-light/90 dark:via-background-dark/90 to-transparent -z-10"></div>
+        <div className="pointer-events-auto bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm">
+          {composerOpen && (
+            <div className="flex items-center gap-2 px-4 pt-2">
+              <div className="flex-1 min-w-0 bg-gray-100 dark:bg-white/5 border-l-4 border-primary rounded-lg px-3 py-1.5">
+                <p className="text-[11px] font-bold text-primary">
+                  {editTarget ? t('community.editingMessage') : t('community.replyingTo', { name: replyTarget?.author?.displayName || '' })}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{(editTarget ?? replyTarget)?.body}</p>
+              </div>
+              <button onClick={cancelComposerContext} className="text-gray-400 hover:text-red-500 shrink-0">
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+          )}
 
-      <div
-        className="flex items-center gap-2 p-3 border-t border-gray-100 dark:border-white/5 shrink-0"
-        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
-      >
-        <input
-          ref={inputRef}
-          value={draft}
-          onChange={e => setDraft(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }}
-          placeholder={placeholder}
-          className="flex-1 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full px-4 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-primary"
-        />
-        <button
-          onClick={submit}
-          disabled={!draft.trim() || sending}
-          className="size-10 rounded-full bg-primary text-background-dark flex items-center justify-center disabled:opacity-40 shrink-0"
-        >
-          <span className="material-symbols-outlined text-xl">send</span>
-        </button>
+          <div
+            className="flex items-center gap-2 p-3 border-t border-gray-100 dark:border-white/5"
+            style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+          >
+            <input
+              ref={inputRef}
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }}
+              placeholder={placeholder}
+              className="flex-1 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full px-4 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-primary"
+            />
+            <button
+              onClick={submit}
+              disabled={!draft.trim() || sending}
+              className="size-10 rounded-full bg-primary text-background-dark flex items-center justify-center disabled:opacity-40 shrink-0"
+            >
+              <span className="material-symbols-outlined text-xl">send</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <CommunitySheet isOpen={!!actionMessage} onClose={() => setActionMessage(null)} title={t('community.messageActions')}>
