@@ -103,6 +103,8 @@ export const community = {
     'community.enterCodePlaceholder': 'Pega un código de invitación',
     'community.redeemCode': 'Unirse con código',
     'community.inviteInvalid': 'Ese código no es válido.',
+    'community.shareLink': 'Compartir enlace',
+    'community.inviteShareMessage': 'Únete a mi círculo en Nur: {{link}}',
 
     // --- members ---
     'community.roleOwner': 'Dueño',
@@ -126,6 +128,13 @@ export const community = {
     'community.messageDeleted': 'Mensaje eliminado',
     'community.deleteMessage': 'Eliminar mensaje',
     'community.loadOlder': 'Cargar mensajes anteriores',
+    'community.messageActions': 'Acciones del mensaje',
+    'community.reply': 'Responder',
+    'community.editMessage': 'Editar',
+    'community.copyMessage': 'Copiar texto',
+    'community.messageEdited': '(editado)',
+    'community.replyingTo': 'Respondiendo a {{name}}',
+    'community.editingMessage': 'Editando mensaje',
 
     // --- group reflections ---
     'community.noGroupReflections': 'Aún no hay reflexiones compartidas.',

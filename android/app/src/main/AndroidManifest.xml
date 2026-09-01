@@ -28,6 +28,14 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="com.fedi.nur" android:host="auth-callback" />
             </intent-filter>
+
+            <!-- Circle invite link: com.fedi.nur://invite/<code> (see authService.ts) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.fedi.nur" android:host="invite" android:pathPrefix="/" />
+            </intent-filter>
         </activity>
 
         <provider

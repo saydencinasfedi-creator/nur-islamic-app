@@ -11,6 +11,12 @@ const OAUTH_REDIRECT = 'com.fedi.nur://auth-callback';
 const emailRedirectTarget = (): string =>
   Capacitor.isNativePlatform() ? OAUTH_REDIRECT : window.location.origin;
 
+// Shareable circle-invite deep link: com.fedi.nur://invite/<code>. Tapping it while
+// the app is installed hands the code to onInviteCode below via the same appUrlOpen
+// listener as the OAuth callback (see AndroidManifest.xml's "invite" intent-filter).
+const INVITE_LINK_PREFIX = 'com.fedi.nur://invite/';
+export const buildInviteLink = (code: string): string => `${INVITE_LINK_PREFIX}${encodeURIComponent(code)}`;
+
 export { isSupabaseConfigured };
 
 // --- Email + password (with an 8-digit confirmation code on sign-up) ---------
@@ -138,11 +144,17 @@ export async function signInWithGoogle(): Promise<void> {
 // `onRecovery` is fired when the link is a password-recovery one, so the app can
 // force the "set a new password" screen.
 let deepLinkBound = false;
-export function bindOAuthDeepLink(onRecovery?: () => void): void {
+export function bindOAuthDeepLink(onRecovery?: () => void, onInviteCode?: (code: string) => void): void {
   if (deepLinkBound || !Capacitor.isNativePlatform()) return;
   deepLinkBound = true;
   CapacitorApp.addListener('appUrlOpen', async ({ url }) => {
-    if (!url || !url.startsWith(OAUTH_REDIRECT)) return;
+    if (!url) return;
+    if (url.startsWith(INVITE_LINK_PREFIX)) {
+      const code = decodeURIComponent(url.slice(INVITE_LINK_PREFIX.length).split(/[/?#]/)[0] ?? '');
+      if (code) onInviteCode?.(code);
+      return;
+    }
+    if (!url.startsWith(OAUTH_REDIRECT)) return;
     try {
       await Browser.close().catch(() => {});
 

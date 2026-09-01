@@ -414,6 +414,17 @@ export const sendMessage = async (groupId: string, body: string, replyTo?: strin
   return toMessage(row);
 };
 
+export const updateMessage = async (id: string, body: string): Promise<void> => {
+  throwOnError(
+    await db()
+      .from('group_messages')
+      .update({ body: body.trim(), edited_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('id')
+      .single(),
+  );
+};
+
 export const softDeleteMessage = async (id: string): Promise<void> => {
   const me = await myId();
   throwOnError(

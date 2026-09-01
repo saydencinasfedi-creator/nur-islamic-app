@@ -122,7 +122,7 @@ const computeStartPage = (
 
 const AppContent: React.FC = () => {
   const { user, signOut, updateLocation, markGoalDone } = useUser();
-  const { bypassed, session, needsProfileSetup, recoveryMode, signOut: authSignOut } = useAuth();
+  const { bypassed, session, needsProfileSetup, recoveryMode, pendingInviteCode, signOut: authSignOut } = useAuth();
   useNotificationEngine();
   // Auth gate: onboarding/auth until there's a session, then a one-time profile
   // setup, then the app. On a build without Supabase (bypassed) we keep the old
@@ -288,6 +288,12 @@ const AppContent: React.FC = () => {
       navigate('dashboard');
     }
   }, [bypassed, session, needsProfileSetup, recoveryMode, navigate]);
+
+  // A circle-invite link was tapped (see authService.ts's appUrlOpen handling) —
+  // jump to Community, which consumes pendingInviteCode and opens it pre-filled.
+  useEffect(() => {
+    if (pendingInviteCode && currentPageRef.current !== 'community') navigate('community');
+  }, [pendingInviteCode, navigate]);
 
   const handleSignOut = () => {
     signOut();

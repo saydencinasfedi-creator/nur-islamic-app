@@ -23,6 +23,9 @@ interface AuthContextValue {
   needsProfileSetup: boolean;
   /** The current session came from a password-recovery link — force the reset screen. */
   recoveryMode: boolean;
+  /** Set when a com.fedi.nur://invite/<code> link was tapped — Community consumes it. */
+  pendingInviteCode: string | null;
+  clearPendingInviteCode: () => void;
 
   signUpWithPassword: (email: string, password: string, displayName: string) => Promise<void>;
   signInWithPassword: (email: string, password: string) => Promise<void>;
@@ -49,6 +52,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<CommunityProfile | null>(null);
   const [recoveryMode, setRecoveryMode] = useState(false);
+  const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
   const loadedProfileFor = useRef<string | null>(null);
 
   const authUserId = session?.user?.id ?? null;
@@ -56,7 +60,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
-    bindOAuthDeepLink(() => setRecoveryMode(true));
+    bindOAuthDeepLink(() => setRecoveryMode(true), code => setPendingInviteCode(code));
 
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null);
@@ -120,6 +124,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     profile,
     needsProfileSetup,
     recoveryMode,
+    pendingInviteCode,
+    clearPendingInviteCode: () => setPendingInviteCode(null),
     signUpWithPassword,
     signInWithPassword,
     verifySignupOtp,
@@ -135,7 +141,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     saveProfile,
     refreshProfile,
     signOut: authSignOut,
-  }), [authLoading, session, authUserId, isGuest, profile, needsProfileSetup, recoveryMode]);
+  }), [authLoading, session, authUserId, isGuest, profile, needsProfileSetup, recoveryMode, pendingInviteCode]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -58,7 +58,7 @@ const fmtDate = (iso: string) => new Date(iso + (iso.length === 10 ? 'T00:00:00'
 
 const Community: React.FC<CommunityProps> = ({ navigate }) => {
   const { t } = useUser();
-  const { bypassed, isGuest, authUserId } = useAuth();
+  const { bypassed, isGuest, authUserId, pendingInviteCode, clearPendingInviteCode } = useAuth();
 
   const [view, setView] = useState<View>('top');
   const [topTab, setTopTab] = useState<TopTab>('home');
@@ -71,6 +71,7 @@ const Community: React.FC<CommunityProps> = ({ navigate }) => {
 
   const [isAppAdmin, setIsAppAdmin] = useState(false);
   const [guestGate, setGuestGate] = useState(false);
+  const [inviteCodeToRedeem, setInviteCodeToRedeem] = useState<string | null>(null);
 
   // top-level data
   const [myGroups, setMyGroups] = useState<Group[]>([]);
@@ -107,6 +108,16 @@ const Community: React.FC<CommunityProps> = ({ navigate }) => {
     const target = consumePendingCommunityTarget();
     if (target) { setActiveGroupId(target.groupId); setCircleTab('info'); setView('circle'); }
   }, [bypassed]);
+
+  // ---- invite link (com.fedi.nur://invite/<code>) tapped ----
+  useEffect(() => {
+    if (!pendingInviteCode) return;
+    setInviteCodeToRedeem(pendingInviteCode);
+    setTopTab('circles');
+    setView('top');
+    setActiveGroupId(null);
+    clearPendingInviteCode();
+  }, [pendingInviteCode, clearPendingInviteCode]);
 
   // ---- realtime: salawat ----
   useEffect(() => {
@@ -187,6 +198,8 @@ const Community: React.FC<CommunityProps> = ({ navigate }) => {
               onCreate={() => (guard() ? null : setView('circle-create'))}
               onRedeemed={id => { refreshMyGroups(); openCircle(id); }}
               guard={guard}
+              initialInviteCode={inviteCodeToRedeem}
+              onConsumedInviteCode={() => setInviteCodeToRedeem(null)}
             />
           )}
           {topTab === 'challenges' && (
@@ -447,12 +460,22 @@ const CirclesTab: React.FC<{
   onCreate: () => void;
   onRedeemed: (id: string) => void;
   guard: () => boolean;
-}> = ({ myGroups, onOpenCircle, onCreate, onRedeemed, guard }) => {
+  initialInviteCode?: string | null;
+  onConsumedInviteCode?: () => void;
+}> = ({ myGroups, onOpenCircle, onCreate, onRedeemed, guard, initialInviteCode, onConsumedInviteCode }) => {
   const { t } = useUser();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Group[]>([]);
   const [searching, setSearching] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  const [prefillCode, setPrefillCode] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!initialInviteCode) return;
+    setPrefillCode(initialInviteCode);
+    setShowInvite(true);
+    onConsumedInviteCode?.();
+  }, [initialInviteCode, onConsumedInviteCode]);
 
   useEffect(() => {
     const h = setTimeout(async () => {
@@ -511,7 +534,7 @@ const CirclesTab: React.FC<{
         <p className="text-xs text-gray-500">{t('community.createCircleSub')}</p>
       </button>
 
-      <InviteSheet isOpen={showInvite} onClose={() => setShowInvite(false)} onRedeemed={id => { setShowInvite(false); onRedeemed(id); }} />
+      <InviteSheet isOpen={showInvite} onClose={() => setShowInvite(false)} initialCode={prefillCode} onRedeemed={id => { setShowInvite(false); onRedeemed(id); }} />
     </div>
   );
 };
