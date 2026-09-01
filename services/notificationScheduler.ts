@@ -26,6 +26,11 @@ export const STREAK_LOCAL_ID = 7;
 export const GOAL_COMPLETE_LOCAL_ID = 8;
 export const GOAL_REMINDER_HOUR = 20; // 8pm local
 
+// Community challenge reminders (services/communityNotifications.ts) get the
+// 700-799 block — cancelled as a whole before every reschedule.
+export const COMMUNITY_CHALLENGE_ID_START = 700;
+export const COMMUNITY_CHALLENGE_ID_END = 799;
+
 // Prayer notifications for one specific day (dayOffset 0 = today, 1 = tomorrow, ...).
 // Only returns prayers whose time is still ahead of now — matters for dayOffset 0, where
 // some of today's prayers may have already passed.

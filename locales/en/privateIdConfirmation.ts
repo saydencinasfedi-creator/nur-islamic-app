@@ -8,4 +8,6 @@ export const privateIdConfirmation = {
     'privateIdConfirmation.dataStoredLocally': 'Data stored locally on device',
     'privateIdConfirmation.zeroAds': 'Zero advertisements',
     'privateIdConfirmation.beginSpiritualPractice': 'Begin Spiritual Practice',
+    'privateIdConfirmation.guestNote': 'A guest session lives only on this device. Add an email or Google later to keep your account and use Community.',
+    'privateIdConfirmation.error': "Couldn't start a guest session. Please try again.",
 } as const;

@@ -11,6 +11,7 @@ import {
 import { fetchPrayerTimes, reverseGeocode, forwardGeocode } from '../services/prayerService';
 import { deleteAudioFile } from '../services/fileStorage';
 import { Language, TranslationKey, translate, RTL_LANGUAGES } from '../services/i18n';
+import { useAuth } from './AuthContext';
 
 interface UserContextType {
     user: User | null;
@@ -169,11 +170,36 @@ const goalsPercent = (goals: Goal[]): number => {
 };
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    // Real identity (Supabase). On a build without Supabase (`bypassed`) this is inert
+    // and the app keeps its previous local-only behaviour.
+    const { authUserId, profile: communityProfile, bypassed: authBypassed } = useAuth();
+
     // Persisted locally so the user doesn't have to log in again every time they open the app.
     const [user, setUser] = useState<User | null>(() => {
         const saved = localStorage.getItem('nurUser');
         return saved ? JSON.parse(saved) : null;
     });
+
+    // Bridge the Supabase session + Community profile into the local `user` object the
+    // rest of the app already reads (name, avatar, id). memberSince/isPremium/location
+    // stay device-local for now.
+    useEffect(() => {
+        if (authBypassed) return;
+        if (!authUserId) return;
+        setUser(prev => {
+            const base: User = prev ?? {
+                name: communityProfile?.displayName || 'Nur',
+                memberSince: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                isPremium: false,
+            };
+            return {
+                ...base,
+                id: authUserId,
+                name: communityProfile?.displayName || base.name,
+                avatar: communityProfile?.avatarUrl ?? base.avatar,
+            };
+        });
+    }, [authBypassed, authUserId, communityProfile?.displayName, communityProfile?.avatarUrl]);
     const [location, setLocation] = useState<Location | null>(() => {
         const saved = localStorage.getItem('nurLocation');
         return saved ? JSON.parse(saved) : null;

@@ -24,11 +24,13 @@ import { notifications } from './notifications';
 import { onboarding } from './onboarding';
 import { privateIdConfirmation } from './privateIdConfirmation';
 import { profile } from './profile';
+import { profileSetup } from './profileSetup';
 import { qibla } from './qibla';
 import { quran } from './quran';
 import { quranFullSurahs } from './quranFullSurahs';
 import { recitationFormSheet } from './recitationFormSheet';
 import { reflections } from './reflections';
+import { resetPassword } from './resetPassword';
 import { salat } from './salat';
 import { settings } from './settings';
 import { supplications } from './supplications';
@@ -59,11 +61,13 @@ export const es = {
     ...onboarding,
     ...privateIdConfirmation,
     ...profile,
+    ...profileSetup,
     ...qibla,
     ...quran,
     ...quranFullSurahs,
     ...recitationFormSheet,
     ...reflections,
+    ...resetPassword,
     ...salat,
     ...settings,
     ...supplications,

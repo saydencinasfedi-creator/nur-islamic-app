@@ -1,6 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { useUser } from '../contexts/UserContext';
+import { useAuth } from '../contexts/AuthContext';
+import { isSupabaseConfigured } from '../services/supabase';
+import { listMyJoinedChallenges } from '../services/communityService';
+import { syncChallengeNotifications } from '../services/communityNotifications';
 import { NotificationType, PrayerTimes, PrayerName, PRAYER_NAMES } from '../types';
 import { fetchPrayerTimes } from '../services/prayerService';
 import { scheduleAdhanAlarms, cancelAdhanAlarms } from '../services/adhanAlarm';
@@ -94,6 +98,7 @@ export const useNotificationEngine = () => {
         adhanSounds, activeAdhanId, adhanPrayerEnabled, adhanVolumePercent, flipToStopAdhan,
     } = useUser();
 
+    const { session } = useAuth();
     const lastStreak = useRef<number | null>(null);
     const lastGoalsComplete = useRef<boolean | null>(null);
     // Tracked separately from the once-per-day localStorage guard below, so switching the
@@ -255,6 +260,15 @@ export const useNotificationEngine = () => {
             LocalNotifications.cancel({ notifications: [{ id: GOAL_REMINDER_LOCAL_ID }] }).catch(() => { });
         }
     }, [goalsTodayPercent]);
+
+    // Community challenge reminders — re-armed once per calendar day (the guard
+    // lives inside syncChallengeNotifications) from the user's joined challenges.
+    useEffect(() => {
+        if (!isSupabaseConfigured || !session) return;
+        listMyJoinedChallenges()
+            .then(joined => syncChallengeNotifications(joined))
+            .catch(() => { });
+    }, [session]);
 
     // Streak achievement — event-driven, fired the moment the streak goes up.
     useEffect(() => {

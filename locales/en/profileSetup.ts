@@ -1,0 +1,17 @@
+export const profileSetup = {
+    'profileSetup.title': 'Set up your profile',
+    'profileSetup.subtitle': 'This is how other members will see you in groups. You can change it anytime.',
+    'profileSetup.displayNameLabel': 'Display name',
+    'profileSetup.displayNamePlaceholder': 'e.g. Yusuf',
+    'profileSetup.displayNameHint': 'Shown on your messages and reflections in a group.',
+    'profileSetup.bioLabel': 'Short bio (optional)',
+    'profileSetup.bioPlaceholder': 'A line about what you hope to learn or share.',
+    'profileSetup.ageRangeLabel': 'Age range (optional)',
+    'profileSetup.ageRangeHint': 'Only ever shown as a range, never an exact age. Helps groups find the right members.',
+    'profileSetup.ageTeens': 'Teens',
+    'profileSetup.age1824': '18–24',
+    'profileSetup.age2534': '25–34',
+    'profileSetup.age35': '35+',
+    'profileSetup.continue': 'Continue',
+    'profileSetup.saveError': "Couldn't save your profile. Please try again.",
+} as const;

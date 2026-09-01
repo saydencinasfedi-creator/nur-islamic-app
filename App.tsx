@@ -17,6 +17,8 @@ const NO_SAFE_AREA_PAGES: Partial<Record<PageId, true>> = {
   'create-account': true,
   'google-login': true,
   'private-id': true,
+  'profile-setup': true,
+  'reset-password': true,
   settings: true,
   language: true,
   appearance: true,
@@ -85,8 +87,11 @@ import Notifications from './pages/Notifications';
 import DailyGoals from './pages/DailyGoals';
 import QuranFullSurahs from './pages/QuranFullSurahs';
 import Reflections from './pages/Reflections';
+import ProfileSetup from './pages/ProfileSetup';
+import ResetPassword from './pages/ResetPassword';
 import BottomNav from './components/BottomNav';
 import { UserProvider, useUser } from './contexts/UserContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useNotificationEngine } from './hooks/useNotificationEngine';
 
 // Screens that make up the "Settings" section — used to detect entering/leaving the whole
@@ -101,13 +106,33 @@ const SETTINGS_SECTION_PAGES: Partial<Record<PageId, true>> = {
   'help-center': true,
 };
 
+const computeStartPage = (
+  bypassed: boolean,
+  hasSession: boolean,
+  needsProfileSetup: boolean,
+  recoveryMode: boolean,
+  localUserName: string | undefined,
+): PageId => {
+  if (bypassed) return localUserName ? 'dashboard' : 'onboarding';
+  if (!hasSession) return 'onboarding';
+  if (recoveryMode) return 'reset-password';
+  if (needsProfileSetup) return 'profile-setup';
+  return 'dashboard';
+};
+
 const AppContent: React.FC = () => {
-  const { user, updateUser, signOut, updateLocation, markGoalDone } = useUser();
+  const { user, signOut, updateLocation, markGoalDone } = useUser();
+  const { bypassed, session, needsProfileSetup, recoveryMode, signOut: authSignOut } = useAuth();
   useNotificationEngine();
-  // Skip onboarding/auth entirely if a session was already persisted locally.
-  const [currentPage, setCurrentPage] = useState<PageId>(user?.name ? 'dashboard' : 'onboarding');
+  // Auth gate: onboarding/auth until there's a session, then a one-time profile
+  // setup, then the app. On a build without Supabase (bypassed) we keep the old
+  // local check so nothing regresses.
+  const [currentPage, setCurrentPage] = useState<PageId>(
+    computeStartPage(bypassed, !!session, needsProfileSetup, recoveryMode, user?.name),
+  );
   const currentPageRef = useRef(currentPage);
   useEffect(() => { currentPageRef.current = currentPage; }, [currentPage]);
+  const authRef = useRef({ hasSession: !!session, needsProfileSetup });
   // Theme: persisted across launches (previously reset to dark every time), with an
   // optional "follow the OS" mode. Picking Light/Dark manually (setDarkMode below) always
   // turns useSystemTheme back off — an explicit choice overrides following the system.
@@ -233,29 +258,53 @@ const AppContent: React.FC = () => {
     };
   }, [navigate]);
 
-  const handleLogin = (name: string) => {
-    updateUser({
-      name,
-      memberSince: 'Oct 2023',
-      isPremium: true,
-      privateId: '8821 4902 1193'
-    });
-    navigate('dashboard');
-  };
+  // React to auth transitions: sign-in -> profile setup (once) -> dashboard;
+  // sign-out -> onboarding. Inert on a bypassed (no-Supabase) build.
+  useEffect(() => {
+    if (bypassed) return;
+    const prev = authRef.current;
+    authRef.current = { hasSession: !!session, needsProfileSetup };
+    const PRE_AUTH: PageId[] = ['onboarding', 'auth', 'email-login', 'create-account', 'google-login', 'private-id'];
+
+    if (!session) {
+      if (!PRE_AUTH.includes(currentPageRef.current)) navigate('onboarding');
+      return;
+    }
+    // A password-recovery link just opened a session: force the reset screen and
+    // stay there until the new password is saved (recoveryMode flips back off).
+    if (recoveryMode) {
+      if (currentPageRef.current !== 'reset-password') navigate('reset-password');
+      return;
+    }
+    if (currentPageRef.current === 'reset-password') {
+      navigate(needsProfileSetup ? 'profile-setup' : 'dashboard');
+      return;
+    }
+    if (!prev.hasSession) {
+      navigate(needsProfileSetup ? 'profile-setup' : 'dashboard');
+      return;
+    }
+    if (prev.needsProfileSetup && !needsProfileSetup && currentPageRef.current === 'profile-setup') {
+      navigate('dashboard');
+    }
+  }, [bypassed, session, needsProfileSetup, recoveryMode, navigate]);
 
   const handleSignOut = () => {
     signOut();
+    if (!bypassed) authSignOut();
     navigate('onboarding');
   };
 
   const renderPage = () => {
     switch (currentPage) {
       case 'onboarding': return <Onboarding onStart={() => navigate('auth')} />;
-      case 'auth': return <Auth onBack={() => navigate('onboarding')} onLogin={handleLogin} onGenerateID={() => navigate('private-id')} onEmailLogin={() => navigate('email-login')} onGoogleLogin={() => navigate('google-login')} />;
-      case 'email-login': return <EmailAuth onBack={() => navigate('auth')} onLogin={(email) => handleLogin(email)} onCreateAccount={() => navigate('create-account')} />;
-      case 'create-account': return <CreateAccount onBack={() => navigate('email-login')} onSignUp={(name) => handleLogin(name)} onLogin={() => navigate('email-login')} />;
-      case 'google-login': return <GoogleLogin onBack={() => navigate('auth')} onLogin={() => handleLogin('Google User')} />;
-      case 'private-id': return <PrivateIDConfirmation onBack={() => navigate('auth')} onStart={() => handleLogin('Guest User')} />;
+      case 'auth': return <Auth onBack={() => navigate('onboarding')} onGenerateID={() => navigate('private-id')} onEmailLogin={() => navigate('email-login')} onGoogleLogin={() => navigate('google-login')} />;
+      case 'email-login': return <EmailAuth onBack={() => navigate('auth')} onCreateAccount={() => navigate('create-account')} />;
+      case 'create-account': return <CreateAccount onBack={() => navigate('email-login')} onLogin={() => navigate('email-login')} />;
+      case 'google-login': return <GoogleLogin onBack={() => navigate('auth')} />;
+      case 'private-id': return <PrivateIDConfirmation onBack={() => navigate('auth')} />;
+      case 'profile-setup': return <ProfileSetup />;
+      case 'reset-password': return <ResetPassword onDone={() => navigate(needsProfileSetup ? 'profile-setup' : 'dashboard')} />;
       case 'dashboard': return <Dashboard navigate={navigate} user={user} />;
       case 'salat': return <Salat navigate={navigate} onBack={() => navigate('dashboard')} onComplete={() => markGoalDone('Salat')} />;
       case 'tasbih': return <Tasbih navigate={navigate} onBack={() => navigate('dashboard')} onComplete={() => markGoalDone('Dhikr')} />;
@@ -303,11 +352,29 @@ const AppContent: React.FC = () => {
   );
 };
 
-const App: React.FC = () => {
+const Splash: React.FC = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
+    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/80 to-[#0c8e56] flex items-center justify-center shadow-lg shadow-primary/20 animate-pulse">
+      <span className="material-symbols-outlined text-background-dark text-2xl">mosque</span>
+    </div>
+  </div>
+);
+
+const AuthGate: React.FC = () => {
+  const { authLoading } = useAuth();
+  if (authLoading) return <Splash />;
   return (
     <UserProvider>
       <AppContent />
     </UserProvider>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AuthGate />
+    </AuthProvider>
   );
 };
 

@@ -11,6 +11,7 @@ const TYPE_STYLE: Record<string, { bg: string; icon: string }> = {
     prayer: { bg: 'bg-primary/20 text-primary', icon: 'schedule' },
     goal: { bg: 'bg-gold-accent/20 text-gold-accent', icon: 'task_alt' },
     streak: { bg: 'bg-blue-500/20 text-blue-500', icon: 'local_fire_department' },
+    community: { bg: 'bg-primary/20 text-primary', icon: 'groups' },
 };
 
 const formatTime = (timestamp: number, yesterdayLabel: string) => {

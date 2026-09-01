@@ -1,0 +1,17 @@
+export const profileSetup = {
+    'profileSetup.title': 'Configura tu perfil',
+    'profileSetup.subtitle': 'Así te verán los demás miembros en los grupos. Puedes cambiarlo cuando quieras.',
+    'profileSetup.displayNameLabel': 'Nombre visible',
+    'profileSetup.displayNamePlaceholder': 'p. ej. Yusuf',
+    'profileSetup.displayNameHint': 'Aparece en tus mensajes y reflexiones dentro de un grupo.',
+    'profileSetup.bioLabel': 'Biografía corta (opcional)',
+    'profileSetup.bioPlaceholder': 'Una línea sobre lo que quieres aprender o compartir.',
+    'profileSetup.ageRangeLabel': 'Rango de edad (opcional)',
+    'profileSetup.ageRangeHint': 'Solo se muestra como rango, nunca la edad exacta. Ayuda a los grupos a encontrar a los miembros adecuados.',
+    'profileSetup.ageTeens': 'Adolescentes',
+    'profileSetup.age1824': '18–24',
+    'profileSetup.age2534': '25–34',
+    'profileSetup.age35': '35+',
+    'profileSetup.continue': 'Continuar',
+    'profileSetup.saveError': 'No se pudo guardar tu perfil. Inténtalo de nuevo.',
+} as const;

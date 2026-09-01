@@ -11,7 +11,11 @@ import {
 } from '../services/reflectionsNav';
 import MarkdownContent, { quranTokenToText } from '../components/MarkdownContent';
 import ReflectionReferencePicker from '../components/ReflectionReferencePicker';
+import GroupPickerSheet from '../components/GroupPickerSheet';
 import { getAyahTranslations } from '../services/quranService';
+import { useAuth } from '../contexts/AuthContext';
+import * as community from '../services/communityService';
+import type { Group } from '../types';
 
 const TOKEN_SCAN_RE = /\[\[quran:(\d{1,3}):(\d{1,4})/g;
 
@@ -102,6 +106,27 @@ const Reflections: React.FC<ReflectionsProps> = ({ navigate, onBack }) => {
     // deletes
     const [deleteTarget, setDeleteTarget] = useState<Reflection | null>(null);
     const [deleteTagTarget, setDeleteTagTarget] = useState<string | null>(null);
+
+    // share a reflection into a Community circle (server-side copy, never a move)
+    const { bypassed: authBypassed, isGuest } = useAuth();
+    const [shareTarget, setShareTarget] = useState<Reflection | null>(null);
+    const [shareGroups, setShareGroups] = useState<Group[]>([]);
+    const [shareConfirm, setShareConfirm] = useState<{ reflection: Reflection; group: Group } | null>(null);
+    const [shareBusy, setShareBusy] = useState(false);
+    const communityEnabled = !authBypassed && !isGuest;
+    const openShare = (r: Reflection) => {
+        setShareTarget(r);
+        community.listMyGroups().then(gs => setShareGroups(gs.filter(g => g.myStatus === 'active'))).catch(() => setShareGroups([]));
+    };
+    const doShare = async () => {
+        if (!shareConfirm || shareBusy) return;
+        setShareBusy(true);
+        try {
+            await community.sharePersonalReflection(shareConfirm.reflection, shareConfirm.group.id);
+            setShareConfirm(null);
+            setShareTarget(null);
+        } catch { /* ignore */ } finally { setShareBusy(false); }
+    };
 
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -645,6 +670,16 @@ const Reflections: React.FC<ReflectionsProps> = ({ navigate, onBack }) => {
                             </div>
                         </div>
                     )}
+
+                    {communityEnabled && (
+                        <button
+                            onClick={() => openShare(r)}
+                            className="mt-10 w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-primary/30 text-primary font-semibold text-sm hover:bg-primary/10 transition-colors"
+                        >
+                            <span className="material-symbols-outlined text-lg">groups</span>
+                            {t('community.shareToCommunity')}
+                        </button>
+                    )}
                 </div>
             </>
         );
@@ -930,6 +965,23 @@ const Reflections: React.FC<ReflectionsProps> = ({ navigate, onBack }) => {
                 existing={pickerMode === 'list' ? draftRefs : []}
                 onAdd={onPickerAdd}
             />
+
+            <GroupPickerSheet
+                isOpen={!!shareTarget}
+                onClose={() => setShareTarget(null)}
+                groups={shareGroups}
+                onPick={g => shareTarget && setShareConfirm({ reflection: shareTarget, group: g })}
+            />
+            {shareConfirm && (
+                <ConfirmModal
+                    title={t('community.shareToCommunity')}
+                    body={t('community.shareConfirm', { name: shareConfirm.group.name })}
+                    cancelLabel={t('common.cancel')}
+                    confirmLabel={t('community.shareCta')}
+                    onCancel={() => setShareConfirm(null)}
+                    onConfirm={doShare}
+                />
+            )}
 
             {deleteTarget && (
                 <ConfirmModal

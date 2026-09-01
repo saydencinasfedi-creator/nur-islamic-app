@@ -27,7 +27,7 @@ export const onboarding = {
     'onboarding.privacySection4Intro': 'We use one external service:',
     'onboarding.privacyAladhanLabel': 'Aladhan API:',
     'onboarding.privacyAladhanBody': 'For fetching prayer times based on coordinates.',
-    'onboarding.privacySection4Footer': 'Signing in with Google or Email currently only sets a display name on this device — it does not sync your data to any server.',
+    'onboarding.privacySection4Footer': 'Signing in with Google or Email identifies your account. Your prayers, goals and personal reflections stay on this device; only what you post in a Community group is stored on our server and shown to that group.',
     'onboarding.privacySection5Title': '5. Updates to This Policy',
     'onboarding.privacySection5Body': 'We may update this privacy policy from time to time. You are advised to review this page periodically for any changes.',
     'onboarding.privacySection6Title': '6. Contact Us',

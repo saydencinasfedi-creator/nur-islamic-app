@@ -11,6 +11,7 @@ const DataPrivacy: React.FC<DataPrivacyProps> = ({ onBack }) => {
   const items = [
     { icon: 'cloud_off', label: t('dataPrivacy.localStorage'), desc: t('dataPrivacy.localStorageDesc'), color: 'text-blue-500', bg: 'bg-blue-500/10' },
     { icon: 'login', label: t('dataPrivacy.googleEmailSignIn'), desc: t('dataPrivacy.googleEmailSignInDesc'), color: 'text-purple-500', bg: 'bg-purple-500/10' },
+    { icon: 'groups', label: t('dataPrivacy.community'), desc: t('dataPrivacy.communityDesc'), color: 'text-primary', bg: 'bg-primary/10' },
     { icon: 'explore', label: t('dataPrivacy.prayerTimesQibla'), desc: t('dataPrivacy.prayerTimesQiblaDesc'), color: 'text-teal-500', bg: 'bg-teal-500/10' },
     { icon: 'block', label: t('dataPrivacy.noAds'), desc: t('dataPrivacy.noAdsDesc'), color: 'text-orange-500', bg: 'bg-orange-500/10' }
   ];

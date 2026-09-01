@@ -27,7 +27,7 @@ export const onboarding = {
     'onboarding.privacySection4Intro': 'Usamos un servicio externo:',
     'onboarding.privacyAladhanLabel': 'API de Aladhan:',
     'onboarding.privacyAladhanBody': 'Para obtener los horarios de rezo según las coordenadas.',
-    'onboarding.privacySection4Footer': 'Iniciar sesión con Google o correo actualmente solo establece un nombre visible en este dispositivo — no sincroniza tus datos con ningún servidor.',
+    'onboarding.privacySection4Footer': 'Iniciar sesión con Google o correo identifica tu cuenta. Tus rezos, objetivos y reflexiones personales permanecen en este dispositivo; solo lo que publicas en un grupo de Comunidad se guarda en nuestro servidor y se muestra a ese grupo.',
     'onboarding.privacySection5Title': '5. Actualizaciones de esta política',
     'onboarding.privacySection5Body': 'Podemos actualizar esta política de privacidad de vez en cuando. Te recomendamos revisar esta página periódicamente para ver cualquier cambio.',
     'onboarding.privacySection6Title': '6. Contáctanos',

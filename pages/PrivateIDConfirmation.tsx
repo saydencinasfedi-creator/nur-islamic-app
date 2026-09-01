@@ -1,21 +1,29 @@
 
 import React, { useState } from 'react';
 import { useUser } from '../contexts/UserContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface PrivateIDConfirmationProps {
   onBack: () => void;
-  onStart: () => void;
 }
 
-const PrivateIDConfirmation: React.FC<PrivateIDConfirmationProps> = ({ onBack, onStart }) => {
+const PrivateIDConfirmation: React.FC<PrivateIDConfirmationProps> = ({ onBack }) => {
   const { t } = useUser();
-  const privateId = "8821 4902 1193";
-  const [copied, setCopied] = useState(false);
+  const { signInAsGuest } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(privateId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const onStart = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      await signInAsGuest();
+      // Session change is handled centrally in App.tsx.
+    } catch (err: any) {
+      setError(err?.message || t('privateIdConfirmation.error'));
+      setBusy(false);
+    }
   };
 
   return (
@@ -60,20 +68,13 @@ const PrivateIDConfirmation: React.FC<PrivateIDConfirmationProps> = ({ onBack, o
 
         <div className="w-full relative overflow-hidden rounded-2xl bg-white dark:bg-[#152a21] border border-gray-200 dark:border-primary/20 shadow-lg mb-6">
           <div className="h-1.5 w-full bg-gradient-to-r from-primary/40 via-primary to-primary/40"></div>
-          <div className="p-4 flex flex-col items-center">
-            <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold mb-2">{t('privateIdConfirmation.yourPrivateId')}</p>
-            <div className="w-full bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-200 dark:border-white/5 py-2.5 px-2 mb-3">
-              <p className="font-mono text-xl sm:text-2xl text-center text-gray-800 dark:text-primary tracking-widest font-medium select-all">
-                {privateId}
-              </p>
+          <div className="p-4 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary">
+              <span className="material-symbols-outlined text-lg">info</span>
             </div>
-            <button
-              onClick={handleCopy}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all w-full justify-center group ${copied ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 scale-[1.02]' : 'bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300'}`}
-            >
-              <span className="material-symbols-outlined text-lg transition-colors">{copied ? 'check' : 'content_copy'}</span>
-              <span>{copied ? t('privateIdConfirmation.copied') : t('privateIdConfirmation.copyToClipboard')}</span>
-            </button>
+            <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              {t('privateIdConfirmation.guestNote')}
+            </p>
           </div>
         </div>
 
@@ -101,16 +102,18 @@ const PrivateIDConfirmation: React.FC<PrivateIDConfirmationProps> = ({ onBack, o
         <div className="flex-1"></div>
 
         <div className="mt-4">
+          {error && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 dark:text-red-400 text-sm text-center mb-3">{error}</div>
+          )}
           <button
             onClick={onStart}
-            className="w-full rounded-xl bg-primary hover:bg-[#10d482] text-background-dark font-bold text-base py-4 flex items-center justify-center gap-2 transition-transform active:scale-[0.98] shadow-[0_0_20px_rgba(19,236,146,0.25)]"
+            disabled={busy}
+            className="w-full rounded-xl bg-primary hover:bg-[#10d482] disabled:opacity-60 text-background-dark font-bold text-base py-4 flex items-center justify-center gap-2 transition-transform active:scale-[0.98] shadow-[0_0_20px_rgba(19,236,146,0.25)]"
           >
-            <span>{t('privateIdConfirmation.beginSpiritualPractice')}</span>
-            <span className="material-symbols-outlined">arrow_forward</span>
+            {busy
+              ? <span className="w-5 h-5 border-2 border-background-dark border-t-transparent rounded-full animate-spin"></span>
+              : <><span>{t('privateIdConfirmation.beginSpiritualPractice')}</span><span className="material-symbols-outlined">arrow_forward</span></>}
           </button>
-          {/* <p className="text-[11px] text-center text-gray-400 mt-4 mb-4">
-            I have saved my Private ID securely
-          </p> */}
         </div>
       </div>
       <div className="h-5 bg-background-light dark:bg-background-dark"></div>

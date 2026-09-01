@@ -10,6 +10,7 @@ import {
   setPendingReflectionDraft,
   setPendingOpenReflectionId,
 } from '../services/reflectionsNav';
+import { consumeReturnToCommunity, setReturnToCommunity } from '../services/communityNav';
 import { CapacitorMusicControls } from 'capacitor-music-controls-plugin';
 import { useUser } from '../contexts/UserContext';
 
@@ -343,6 +344,7 @@ const Quran: React.FC<QuranProps> = ({ navigate, onBack, onRead, setNavHidden })
   const pendingScrollAyah = useRef<number | null>(null);
   // Set when we arrived here from a reflection's reference — hardware back returns there.
   const returnToReflectionId = useRef<string | null>(null);
+  const returnToCommunityRef = useRef<ReturnType<typeof consumeReturnToCommunity>>(null);
 
   // Tafsir State
   const [tafsirData, setTafsirData] = useState<Ayah[] | null>(null);
@@ -377,6 +379,8 @@ const Quran: React.FC<QuranProps> = ({ navigate, onBack, onRead, setNavHidden })
       // to that reflection on back.
       const rid = consumeReturnToReflectionId();
       if (rid) returnToReflectionId.current = rid;
+      const rc = consumeReturnToCommunity();
+      if (rc) returnToCommunityRef.current = rc;
       const target = consumePendingQuranTarget();
       if (target) {
         const targetSurah = surahList.find(x => x.number === target.surahNumber);
@@ -706,6 +710,14 @@ const Quran: React.FC<QuranProps> = ({ navigate, onBack, onRead, setNavHidden })
   // If we got here from a reflection's reference, "back" (hardware OR the on-screen arrow)
   // returns to that reflection. Returns true when it consumed the press.
   const returnToReflectionIfPending = (): boolean => {
+    if (returnToCommunityRef.current) {
+      const rc = returnToCommunityRef.current;
+      returnToCommunityRef.current = null;
+      audioEngine.stop();
+      setReturnToCommunity(rc);
+      navigate('community');
+      return true;
+    }
     if (!returnToReflectionId.current) return false;
     const id = returnToReflectionId.current;
     returnToReflectionId.current = null;
