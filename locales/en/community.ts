@@ -91,6 +91,13 @@ export const community = {
     'community.circlePrivacyLabel': 'Privacy',
     'community.circleGenderLabel': 'Who it’s for',
     'community.editCircle': 'Edit circle',
+    'community.aboutCircle': 'About',
+
+    // --- verse of the day ---
+    'community.verseOfDay': 'Verse of the Day',
+    'community.setVerseOfDay': 'Set a verse of the day',
+    'community.verseOfDayHint': "Optional. Pinned at the top of this circle's chat — anyone can reflect on it.",
+    'community.reflectOnVerse': 'Reflect on this verse',
 
     // --- invites ---
     'community.inviteTitle': 'Invite people',
@@ -120,6 +127,8 @@ export const community = {
     'community.removeMember': 'Remove from circle',
     'community.banMember': 'Ban',
     'community.memberActions': 'Manage member',
+    'community.searchMembers': 'Search members by name',
+    'community.messageMember': 'Message',
 
     // --- chat ---
     'community.chatPlaceholder': 'Message…',
@@ -135,6 +144,12 @@ export const community = {
     'community.messageEdited': '(edited)',
     'community.replyingTo': 'Replying to {{name}}',
     'community.editingMessage': 'Editing message',
+
+    // --- direct messages ---
+    'community.messages': 'Messages',
+    'community.noMessagesYet': 'No conversations yet',
+    'community.noMessagesYetSub': 'Message someone from a circle’s Members list to start one.',
+    'community.dmPlaceholder': 'Message…',
 
     // --- group reflections ---
     'community.noGroupReflections': 'No shared reflections yet.',

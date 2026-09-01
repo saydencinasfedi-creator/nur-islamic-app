@@ -3,7 +3,8 @@ import { useUser } from '../contexts/UserContext';
 import CommunitySheet, { sheetField, sheetLabel, sheetPrimaryBtn, sheetChip } from './CommunitySheet';
 import IconPickerSheet from './IconPickerSheet';
 import GoalIcon from './GoalIcon';
-import type { GroupCategory, GroupGender, GroupPrivacy, Group } from '../types';
+import ReflectionReferencePicker from './ReflectionReferencePicker';
+import type { GroupCategory, GroupGender, GroupPrivacy, Group, QuranReference } from '../types';
 import type { GroupDraft } from '../services/communityService';
 import type { TranslationKey } from '../services/i18n';
 
@@ -47,6 +48,8 @@ const GroupFormSheet: React.FC<Props> = ({ isOpen, onClose, onSave, editing }) =
   const [gender, setGender] = useState<GroupGender>('mixed');
   const [icon, setIcon] = useState<string | undefined>(undefined);
   const [showIcon, setShowIcon] = useState(false);
+  const [verseOfDay, setVerseOfDay] = useState<QuranReference | null>(null);
+  const [showVersePicker, setShowVersePicker] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -60,8 +63,10 @@ const GroupFormSheet: React.FC<Props> = ({ isOpen, onClose, onSave, editing }) =
       setPrivacy(editing.privacy);
       setGender(editing.groupGender);
       setIcon(editing.avatarUrl ?? undefined);
+      setVerseOfDay(editing.verseOfDay ?? null);
     } else {
       setName(''); setDescription(''); setCategory('general'); setPrivacy('public'); setGender('mixed'); setIcon(undefined);
+      setVerseOfDay(null);
     }
   }, [isOpen, editing]);
 
@@ -79,6 +84,7 @@ const GroupFormSheet: React.FC<Props> = ({ isOpen, onClose, onSave, editing }) =
         privacy,
         groupGender: gender,
         avatarUrl: icon ?? null,
+        verseOfDay,
       });
       onClose();
     } catch (e: any) {
@@ -149,7 +155,35 @@ const GroupFormSheet: React.FC<Props> = ({ isOpen, onClose, onSave, editing }) =
         <p className="text-xs text-gray-500 dark:text-gray-400">{t(PRIVACY.find(p => p.value === privacy)!.hint)}</p>
       </div>
 
+      <div>
+        <label className={sheetLabel}>{t('community.verseOfDay')}</label>
+        {verseOfDay ? (
+          <div className="flex items-center gap-2 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-3">
+            <span className="material-symbols-outlined text-primary shrink-0">menu_book</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{verseOfDay.surahName} {verseOfDay.surahNumber}:{verseOfDay.ayahNumber}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{verseOfDay.ayahText}</p>
+            </div>
+            <button onClick={() => setVerseOfDay(null)} className="text-gray-400 hover:text-red-500 shrink-0">
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setShowVersePicker(true)} className="w-full py-2.5 rounded-xl text-sm font-bold border border-dashed border-gray-300 dark:border-white/15 text-slate-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+            + {t('community.setVerseOfDay')}
+          </button>
+        )}
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('community.verseOfDayHint')}</p>
+      </div>
+
       {error && <div className="text-sm text-red-500 dark:text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl p-3">{error}</div>}
+
+      <ReflectionReferencePicker
+        isOpen={showVersePicker}
+        onClose={() => setShowVersePicker(false)}
+        onAdd={ref => { setVerseOfDay(ref); setShowVersePicker(false); }}
+        existing={[]}
+      />
 
       <IconPickerSheet
         isOpen={showIcon}

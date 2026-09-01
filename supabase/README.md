@@ -37,7 +37,8 @@ npx supabase test db
 
 ## 3. Auth providers
 
-**Email OTP** works out of the box (6-digit codes). For real sending in production,
+**Email OTP** works out of the box (8-digit codes, set via `auth.email.otp_length` in
+`config.toml`). For real sending in production,
 set up SMTP under Authentication → Emails.
 
 **Google:**

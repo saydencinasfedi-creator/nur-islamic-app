@@ -57,6 +57,7 @@ const toGroup = (r: any): Group => ({
   memberCount: r.member_count ?? 0,
   createdAt: r.created_at,
   archivedAt: r.archived_at ?? null,
+  verseOfDay: r.verse_of_day ?? null,
   myRole: r.__myRole ?? null,
   myStatus: r.__myStatus ?? null,
 });
@@ -204,6 +205,8 @@ export interface GroupDraft {
   avatarUrl?: string | null;
   primaryLanguage?: string | null;
   tags?: string[];
+  // Undefined leaves it untouched; null clears it.
+  verseOfDay?: QuranReference | null;
 }
 
 const enrichWithMembership = async (groups: Group[]): Promise<Group[]> => {
@@ -287,6 +290,7 @@ export const updateGroup = async (id: string, patch: Partial<GroupDraft>): Promi
   if (patch.groupGender !== undefined) body.group_gender = patch.groupGender;
   if (patch.avatarUrl !== undefined) body.avatar_url = patch.avatarUrl;
   if (patch.tags !== undefined) body.tags = patch.tags;
+  if (patch.verseOfDay !== undefined) body.verse_of_day = patch.verseOfDay;
   throwOnError(await db().from('groups').update(body).eq('id', id).select('id').single());
 };
 

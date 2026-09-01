@@ -232,6 +232,8 @@ export interface Group {
   memberCount: number;
   createdAt: string; // ISO
   archivedAt?: string | null;
+  // Optional, admin-set: pinned at the top of this circle's chat.
+  verseOfDay?: QuranReference | null;
   // Populated for the current viewer where known.
   myRole?: GroupRole | null;
   myStatus?: GroupMemberStatus | null;
@@ -257,6 +259,32 @@ export interface GroupMessage {
   editedAt?: string | null;
   deletedAt?: string | null;
   author?: CommunityProfile;
+}
+
+// --- Direct messages (1:1) --------------------------------------------------
+// Same shape as GroupMessage, scoped to a thread instead of a circle. No
+// moderator concept — only the two participants can ever act on a thread.
+
+export interface DMMessage {
+  id: string;
+  threadId: string;
+  authorId: string | null;
+  body: string;
+  replyTo?: string | null;
+  createdAt: string;
+  editedAt?: string | null;
+  deletedAt?: string | null;
+  author?: CommunityProfile;
+}
+
+export interface DMThread {
+  id: string;
+  otherUserId: string;
+  otherProfile?: CommunityProfile;
+  lastMessageAt: string;
+  lastMessagePreview?: string | null;
+  lastMessageAuthorId?: string | null;
+  isUnread: boolean;
 }
 
 export interface GroupReflection {

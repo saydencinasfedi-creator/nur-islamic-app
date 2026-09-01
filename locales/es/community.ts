@@ -91,6 +91,13 @@ export const community = {
     'community.circlePrivacyLabel': 'Privacidad',
     'community.circleGenderLabel': 'Para quién es',
     'community.editCircle': 'Editar círculo',
+    'community.aboutCircle': 'Acerca de',
+
+    // --- versículo del día ---
+    'community.verseOfDay': 'Versículo del día',
+    'community.setVerseOfDay': 'Poner un versículo del día',
+    'community.verseOfDayHint': 'Opcional. Se fija arriba del chat de este círculo — cualquiera puede reflexionar sobre él.',
+    'community.reflectOnVerse': 'Reflexionar sobre este versículo',
 
     // --- invites ---
     'community.inviteTitle': 'Invitar gente',
@@ -120,6 +127,8 @@ export const community = {
     'community.removeMember': 'Quitar del círculo',
     'community.banMember': 'Bloquear',
     'community.memberActions': 'Gestionar miembro',
+    'community.searchMembers': 'Buscar miembros por nombre',
+    'community.messageMember': 'Mensaje',
 
     // --- chat ---
     'community.chatPlaceholder': 'Mensaje…',
@@ -135,6 +144,12 @@ export const community = {
     'community.messageEdited': '(editado)',
     'community.replyingTo': 'Respondiendo a {{name}}',
     'community.editingMessage': 'Editando mensaje',
+
+    // --- mensajes directos ---
+    'community.messages': 'Mensajes',
+    'community.noMessagesYet': 'Aún no hay conversaciones',
+    'community.noMessagesYetSub': 'Escribe a alguien desde la lista de miembros de un círculo para empezar una.',
+    'community.dmPlaceholder': 'Mensaje…',
 
     // --- group reflections ---
     'community.noGroupReflections': 'Aún no hay reflexiones compartidas.',

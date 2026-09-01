@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PageId } from '../types';
 import type {
   Group, GroupMember, GroupChallenge, GroupReflection, GroupReflectionComment,
-  DuaRequest, GlobalSalawat, ReactionEmoji,
+  DuaRequest, GlobalSalawat, ReactionEmoji, QuranReference, DMThread, CommunityProfile,
 } from '../types';
 import { useUser } from '../contexts/UserContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,7 @@ import { setPendingQuranTarget } from '../services/reflectionsNav';
 import { setReturnToCommunity, consumeReturnToCommunity, consumePendingCommunityTarget } from '../services/communityNav';
 import * as community from '../services/communityService';
 import type { ReactionSummary } from '../services/communityService';
+import * as dm from '../services/dmService';
 import { subscribeSalawat, subscribeDuaRequests } from '../services/communityRealtime';
 import { rearmChallengeNotifications } from '../services/communityNotifications';
 import Avatar from '../components/Avatar';
@@ -27,6 +28,8 @@ import ReportSheet from '../components/ReportSheet';
 import LinkEmailPrompt from '../components/LinkEmailPrompt';
 import ChatTab from './community/ChatTab';
 import GroupReflectionEditor from './community/GroupReflectionEditor';
+import MessagesTab from './community/MessagesTab';
+import DMThreadView from './community/DMThreadView';
 import type { TranslationKey } from '../services/i18n';
 
 interface CommunityProps {
@@ -34,8 +37,9 @@ interface CommunityProps {
 }
 
 type TopTab = 'home' | 'challenges' | 'circles' | 'duas';
-type View = 'top' | 'circle' | 'circle-create' | 'circle-edit' | 'challenge' | 'greflection' | 'greflection-editor';
+type View = 'top' | 'circle' | 'circle-create' | 'circle-edit' | 'challenge' | 'greflection' | 'greflection-editor' | 'dm-thread';
 type CircleTab = 'info' | 'chat' | 'reflections' | 'challenges' | 'members';
+type CirclesSubTab = 'circles' | 'messages';
 
 const CAT_KEY: Record<string, TranslationKey> = {
   quran: 'community.catQuran', salah: 'community.catSalah', hadith: 'community.catHadith',
@@ -67,6 +71,8 @@ const Community: React.FC<CommunityProps> = ({ navigate }) => {
   const [activeChallengeId, setActiveChallengeId] = useState<string | null>(null);
   const [activeReflectionId, setActiveReflectionId] = useState<string | null>(null);
   const [editReflection, setEditReflection] = useState<GroupReflection | null>(null);
+  const [reflectionPrefillRef, setReflectionPrefillRef] = useState<QuranReference | null>(null);
+  const [activeThread, setActiveThread] = useState<DMThread | null>(null);
   const challengeReturn = useRef<'top' | 'circle'>('top');
 
   const [isAppAdmin, setIsAppAdmin] = useState(false);
@@ -128,7 +134,8 @@ const Community: React.FC<CommunityProps> = ({ navigate }) => {
   // ---- hardware back ----
   useEffect(() => {
     return pushBackHandler(() => {
-      if (view === 'greflection-editor') { setView(editReflection ? 'greflection' : 'circle'); return true; }
+      if (view === 'dm-thread') { setView('top'); setActiveThread(null); return true; }
+      if (view === 'greflection-editor') { setReflectionPrefillRef(null); setView(editReflection ? 'greflection' : 'circle'); return true; }
       if (view === 'greflection') { setView('circle'); setActiveReflectionId(null); return true; }
       if (view === 'challenge') { setView(challengeReturn.current === 'circle' ? 'circle' : 'top'); setActiveChallengeId(null); return true; }
       if (view === 'circle-edit') { setView('circle'); return true; }
@@ -161,9 +168,11 @@ const Community: React.FC<CommunityProps> = ({ navigate }) => {
       <GroupReflectionEditor
         groupId={activeGroupId}
         existing={editReflection}
-        onCancel={() => setView(editReflection ? 'greflection' : 'circle')}
+        prefillRef={reflectionPrefillRef}
+        onCancel={() => { setReflectionPrefillRef(null); setView(editReflection ? 'greflection' : 'circle'); }}
         onDone={saved => {
           setEditReflection(null);
+          setReflectionPrefillRef(null);
           if (saved) { setActiveReflectionId(saved.id); setView('greflection'); }
           else setView('circle');
         }}
@@ -197,6 +206,7 @@ const Community: React.FC<CommunityProps> = ({ navigate }) => {
               onOpenCircle={id => openCircle(id)}
               onCreate={() => (guard() ? null : setView('circle-create'))}
               onRedeemed={id => { refreshMyGroups(); openCircle(id); }}
+              onOpenThread={th => { setActiveThread(th); setView('dm-thread'); }}
               guard={guard}
               initialInviteCode={inviteCodeToRedeem}
               onConsumedInviteCode={() => setInviteCodeToRedeem(null)}
@@ -225,9 +235,20 @@ const Community: React.FC<CommunityProps> = ({ navigate }) => {
           onOpenReflection={id => { setActiveReflectionId(id); setView('greflection'); }}
           onNewReflection={() => { setEditReflection(null); setView('greflection-editor'); }}
           onOpenChallenge={id => openChallenge(id, 'circle')}
+          onReflectOnVerse={ref => { setReflectionPrefillRef(ref); setEditReflection(null); setView('greflection-editor'); }}
+          onOpenThread={th => { setActiveThread(th); setView('dm-thread'); }}
           isAppAdmin={isAppAdmin}
           guard={guard}
           meId={authUserId}
+        />
+      )}
+
+      {view === 'dm-thread' && activeThread && (
+        <DMThreadView
+          threadId={activeThread.id}
+          otherProfile={activeThread.otherProfile}
+          onBack={() => { setView('top'); setActiveThread(null); }}
+          onGuestAction={guard}
         />
       )}
 
@@ -459,11 +480,13 @@ const CirclesTab: React.FC<{
   onOpenCircle: (id: string) => void;
   onCreate: () => void;
   onRedeemed: (id: string) => void;
+  onOpenThread: (thread: DMThread) => void;
   guard: () => boolean;
   initialInviteCode?: string | null;
   onConsumedInviteCode?: () => void;
-}> = ({ myGroups, onOpenCircle, onCreate, onRedeemed, guard, initialInviteCode, onConsumedInviteCode }) => {
+}> = ({ myGroups, onOpenCircle, onCreate, onRedeemed, onOpenThread, guard, initialInviteCode, onConsumedInviteCode }) => {
   const { t } = useUser();
+  const [subTab, setSubTab] = useState<CirclesSubTab>('circles');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Group[]>([]);
   const [searching, setSearching] = useState(false);
@@ -491,48 +514,66 @@ const CirclesTab: React.FC<{
 
   return (
     <div className="px-6 pb-24 space-y-5">
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">search</span>
-          <input
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder={t('community.searchCircles')}
-            className="w-full pl-10 pr-3 py-3 bg-white dark:bg-card-dark border border-gray-100 dark:border-white/5 rounded-2xl text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-primary/50"
-          />
-        </div>
-        <button onClick={() => (guard() ? null : setShowInvite(true))} className="size-12 rounded-2xl bg-gray-100 dark:bg-white/5 border border-gray-100 dark:border-white/5 flex items-center justify-center text-slate-900 dark:text-white shrink-0" title={t('community.enterCodeLabel')}>
-          <span className="material-symbols-outlined">key</span>
-        </button>
+      <div className="flex p-1 bg-gray-100 dark:bg-white/5 rounded-full">
+        {(['circles', 'messages'] as CirclesSubTab[]).map(s => (
+          <button
+            key={s}
+            onClick={() => setSubTab(s)}
+            className={`flex-1 h-9 rounded-full text-sm font-bold transition-colors ${subTab === s ? 'bg-primary text-background-dark shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
+          >
+            {t(s === 'circles' ? 'community.tabCircles' : 'community.messages')}
+          </button>
+        ))}
       </div>
 
-      {myGroups.length > 0 && (
-        <div>
-          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{t('community.myCircles')}</p>
-          <div className="space-y-2">
-            {myGroups.map(g => <CircleRow key={g.id} g={g} onClick={() => onOpenCircle(g.id)} joined />)}
+      {subTab === 'messages' ? (
+        <MessagesTab onOpenThread={onOpenThread} />
+      ) : (
+        <>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">search</span>
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder={t('community.searchCircles')}
+                className="w-full pl-10 pr-3 py-3 bg-white dark:bg-card-dark border border-gray-100 dark:border-white/5 rounded-2xl text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-primary/50"
+              />
+            </div>
+            <button onClick={() => (guard() ? null : setShowInvite(true))} className="size-12 rounded-2xl bg-gray-100 dark:bg-white/5 border border-gray-100 dark:border-white/5 flex items-center justify-center text-slate-900 dark:text-white shrink-0" title={t('community.enterCodeLabel')}>
+              <span className="material-symbols-outlined">key</span>
+            </button>
           </div>
-        </div>
+
+          {myGroups.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{t('community.myCircles')}</p>
+              <div className="space-y-2">
+                {myGroups.map(g => <CircleRow key={g.id} g={g} onClick={() => onOpenCircle(g.id)} joined />)}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{t('community.discoverCircles')}</p>
+            {searching && !discover.length ? (
+              <p className="text-sm text-gray-400 py-4">{t('community.loading')}</p>
+            ) : discover.length === 0 ? (
+              <Empty icon="travel_explore" text={query ? t('community.noCirclesFound') : t('community.noCirclesYet')} />
+            ) : (
+              <div className="space-y-2">
+                {discover.map(g => <CircleRow key={g.id} g={g} onClick={() => onOpenCircle(g.id)} />)}
+              </div>
+            )}
+          </div>
+
+          <button onClick={onCreate} className="w-full p-4 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center text-center py-8 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+            <span className="material-symbols-outlined text-gray-500 text-3xl mb-2">add_circle</span>
+            <h4 className="text-slate-900 dark:text-white font-semibold">{t('community.createCircle')}</h4>
+            <p className="text-xs text-gray-500">{t('community.createCircleSub')}</p>
+          </button>
+        </>
       )}
-
-      <div>
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{t('community.discoverCircles')}</p>
-        {searching && !discover.length ? (
-          <p className="text-sm text-gray-400 py-4">{t('community.loading')}</p>
-        ) : discover.length === 0 ? (
-          <Empty icon="travel_explore" text={query ? t('community.noCirclesFound') : t('community.noCirclesYet')} />
-        ) : (
-          <div className="space-y-2">
-            {discover.map(g => <CircleRow key={g.id} g={g} onClick={() => onOpenCircle(g.id)} />)}
-          </div>
-        )}
-      </div>
-
-      <button onClick={onCreate} className="w-full p-4 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center text-center py-8 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-        <span className="material-symbols-outlined text-gray-500 text-3xl mb-2">add_circle</span>
-        <h4 className="text-slate-900 dark:text-white font-semibold">{t('community.createCircle')}</h4>
-        <p className="text-xs text-gray-500">{t('community.createCircleSub')}</p>
-      </button>
 
       <InviteSheet isOpen={showInvite} onClose={() => setShowInvite(false)} initialCode={prefillCode} onRedeemed={id => { setShowInvite(false); onRedeemed(id); }} />
     </div>
@@ -543,8 +584,9 @@ const CircleRow: React.FC<{ g: Group; onClick: () => void; joined?: boolean }> =
   const { t } = useUser();
   const ic = circleIcon(g);
   return (
-    <button onClick={onClick} className="w-full text-left bg-white dark:bg-card-dark p-4 rounded-2xl border border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-3">
-      <div className="size-11 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center text-primary shrink-0">
+    <button onClick={onClick} className={`relative w-full text-left bg-white dark:bg-card-dark p-4 rounded-2xl border overflow-hidden hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-3 ${joined ? 'border-primary/25 pl-5' : 'border-gray-100 dark:border-white/5'}`}>
+      {joined && <span className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
+      <div className="size-11 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center text-primary shrink-0 overflow-hidden">
         <GoalIcon icon={ic.icon} iconImage={ic.iconImage} className="material-symbols-outlined w-6 h-6" />
       </div>
       <div className="min-w-0 flex-1">
@@ -552,7 +594,10 @@ const CircleRow: React.FC<{ g: Group; onClick: () => void; joined?: boolean }> =
           <h4 className="text-slate-900 dark:text-white font-bold truncate">{g.name}</h4>
           <PrivacyBadge privacy={g.privacy} />
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{t('community.membersCount', { count: g.memberCount })}{g.description ? ` · ${g.description}` : ''}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 truncate flex items-center gap-1">
+          <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>groups</span>
+          {t('community.membersCount', { count: g.memberCount })}{g.description ? ` · ${g.description}` : ''}
+        </p>
       </div>
       {joined
         ? <span className="text-xs font-bold text-primary shrink-0">{t('community.joined')}</span>
@@ -575,15 +620,18 @@ const CircleDetail: React.FC<{
   onOpenReflection: (id: string) => void;
   onNewReflection: () => void;
   onOpenChallenge: (id: string) => void;
+  onReflectOnVerse: (ref: QuranReference) => void;
+  onOpenThread: (thread: DMThread) => void;
   isAppAdmin: boolean;
   guard: () => boolean;
   meId: string | null;
-}> = ({ groupId, tab, onTab, onBack, onLeftGroup, onJoined, onOpenReflection, onNewReflection, onOpenChallenge, guard, meId }) => {
+}> = ({ groupId, tab, onTab, onBack, onLeftGroup, onJoined, onOpenReflection, onNewReflection, onOpenChallenge, onReflectOnVerse, onOpenThread, guard, meId }) => {
   const { t } = useUser();
   const [group, setGroup] = useState<Group | null>(null);
   const [busy, setBusy] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   const load = useCallback(() => { community.getGroup(groupId).then(setGroup).catch(() => {}); }, [groupId]);
   useEffect(() => { load(); }, [load]);
@@ -634,6 +682,11 @@ const CircleDetail: React.FC<{
           <GoalIcon icon={ic.icon} iconImage={ic.iconImage} className="material-symbols-outlined w-5 h-5" />
         </div>
         <h1 className="text-xl font-bold tracking-tight flex-1 truncate">{group.name}</h1>
+        {isAdmin && (
+          <button onClick={() => setShowEdit(true)} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
+            <span className="material-symbols-outlined text-xl">settings</span>
+          </button>
+        )}
       </header>
 
       <div className="flex gap-2 px-6 pb-4 overflow-x-auto no-scrollbar">
@@ -646,12 +699,35 @@ const CircleDetail: React.FC<{
 
       {(tab === 'info' || !isMember) && (
         <div className="px-6 pb-24 space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <PrivacyBadge privacy={group.privacy} />
-            <span className="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full px-2 py-0.5">{t(CAT_KEY[group.category])}</span>
-            <span className="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('community.membersCount', { count: group.memberCount })}</span>
+          <div className="relative w-full h-36 rounded-2xl overflow-hidden">
+            {ic.iconImage ? (
+              <>
+                <img src={ic.iconImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+              </>
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/25 to-primary/5 dark:from-primary/25 dark:to-white/5 flex items-center justify-center">
+                <GoalIcon icon={ic.icon} className="text-primary/70 text-6xl" />
+              </div>
+            )}
+            <h2 className={`absolute bottom-3 left-4 right-4 text-xl font-bold tracking-tight truncate ${ic.iconImage ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+              {group.name}
+            </h2>
           </div>
-          {group.description && <p className="text-sm text-slate-700 dark:text-gray-300 leading-relaxed">{group.description}</p>}
+
+          <div className="bg-white dark:bg-card-dark rounded-2xl p-4 border border-gray-100 dark:border-white/5 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <PrivacyBadge privacy={group.privacy} />
+              <span className="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full px-2 py-0.5">{t(CAT_KEY[group.category])}</span>
+              <span className="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('community.membersCount', { count: group.memberCount })}</span>
+            </div>
+            {group.description && (
+              <div>
+                <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">{t('community.aboutCircle')}</p>
+                <p className="text-sm text-slate-700 dark:text-gray-300 leading-relaxed">{group.description}</p>
+              </div>
+            )}
+          </div>
 
           {!isMember && !isPending && (
             <button onClick={doJoin} disabled={busy} className={primaryBtn}>
@@ -659,7 +735,6 @@ const CircleDetail: React.FC<{
             </button>
           )}
           {isPending && <div className={ghostBtn}>{t('community.requestPending')}</div>}
-          {isMember && !isMember /* placeholder */ && null}
           {!isMember && <p className="text-xs text-gray-500 dark:text-gray-400 text-center">{t('community.nonMemberNotice')}</p>}
 
           {isMember && (
@@ -673,7 +748,13 @@ const CircleDetail: React.FC<{
       )}
 
       {isMember && tab === 'chat' && (
-        <ChatTab groupId={groupId} isModerator={isModerator} onGuestAction={guard} />
+        <ChatTab
+          groupId={groupId}
+          isModerator={isModerator}
+          onGuestAction={guard}
+          verseOfDay={group.verseOfDay}
+          onReflectOnVerse={onReflectOnVerse}
+        />
       )}
 
       {isMember && tab === 'reflections' && (
@@ -685,11 +766,12 @@ const CircleDetail: React.FC<{
       )}
 
       {isMember && tab === 'members' && (
-        <MembersTab groupId={groupId} myRole={group.myRole ?? 'member'} meId={meId} onChanged={load} />
+        <MembersTab groupId={groupId} myRole={group.myRole ?? 'member'} meId={meId} onChanged={load} onOpenThread={onOpenThread} guard={guard} />
       )}
 
       <InviteSheet isOpen={showInvite} onClose={() => setShowInvite(false)} groupId={groupId} isAdmin={isAdmin} />
       <ReportSheet isOpen={showReport} onClose={() => setShowReport(false)} entityType="group" entityId={groupId} groupId={groupId} onDone={() => alert(t('community.reportSent'))} />
+      <GroupFormSheet isOpen={showEdit} onClose={() => setShowEdit(false)} editing={group} onSave={async draft => { await community.updateGroup(groupId, draft); load(); }} />
     </div>
   );
 };
@@ -705,10 +787,13 @@ const CircleReflections: React.FC<{ groupId: string; onOpen: (id: string) => voi
         : list.length === 0 ? <Empty icon="menu_book" text={t('community.noGroupReflections')} />
           : list.map(r => (
             <button key={r.id} onClick={() => onOpen(r.id)} className="w-full text-left bg-white dark:bg-card-dark p-4 rounded-2xl border border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-              <div className="flex items-center gap-2 mb-1">
-                <Avatar src={r.author?.avatarUrl ?? undefined} className="size-6 rounded-full" iconClassName="text-xs" />
-                <span className="text-xs text-gray-500 dark:text-gray-400">{r.author?.displayName || '…'}</span>
-                {r.sourceLocalId && <span className="text-[10px] text-primary bg-primary/10 rounded-full px-1.5">{t('community.shareToCommunity')}</span>}
+              <div className="flex items-center gap-2 mb-2">
+                <Avatar src={r.author?.avatarUrl ?? undefined} className="size-7 rounded-full" iconClassName="text-xs" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-slate-700 dark:text-gray-300 truncate">{r.author?.displayName || '…'}</p>
+                </div>
+                <span className="text-[11px] text-gray-400 shrink-0">{fmtDate(r.createdAt)}</span>
+                {r.sourceLocalId && <span className="text-[10px] text-primary bg-primary/10 rounded-full px-1.5 shrink-0">{t('community.shareToCommunity')}</span>}
               </div>
               {r.title && <h4 className="font-bold text-slate-900 dark:text-white">{r.title}</h4>}
               <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{r.content.replace(/\[\[quran:\d+:\d+(?:\|([^\]]+))?\]\]/g, '$1')}</p>
@@ -785,19 +870,56 @@ const ChallengeRow: React.FC<{ c: GroupChallenge; onClick: () => void }> = ({ c,
   );
 };
 
-const MembersTab: React.FC<{ groupId: string; myRole: string; meId: string | null; onChanged: () => void }> = ({ groupId, myRole, meId, onChanged }) => {
+const roleBadgeStyle: Record<string, string> = {
+  owner: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+  admin: 'bg-primary/10 text-primary border-primary/20',
+  moderator: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+  member: 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-white/10',
+};
+
+const MembersTab: React.FC<{
+  groupId: string;
+  myRole: string;
+  meId: string | null;
+  onChanged: () => void;
+  onOpenThread: (thread: DMThread) => void;
+  guard: () => boolean;
+}> = ({ groupId, myRole, meId, onChanged, onOpenThread, guard }) => {
   const { t } = useUser();
   const [members, setMembers] = useState<GroupMember[] | null>(null);
+  const [query, setQuery] = useState('');
   const load = useCallback(() => community.listMembers(groupId).then(setMembers).catch(() => setMembers([])), [groupId]);
   useEffect(() => { load(); }, [load]);
 
   const isAdmin = myRole === 'owner' || myRole === 'admin';
-  const active = (members ?? []).filter(m => m.status === 'active' || m.status === 'muted');
+  const q = query.trim().toLowerCase();
+  const matches = (m: GroupMember) => !q || (m.profile?.displayName || '').toLowerCase().includes(q);
+  const active = (members ?? []).filter(m => (m.status === 'active' || m.status === 'muted') && matches(m));
   const pending = (members ?? []).filter(m => m.status === 'pending');
   const roleKey: Record<string, TranslationKey> = { owner: 'community.roleOwner', admin: 'community.roleAdmin', moderator: 'community.roleModerator', member: 'community.roleMember' };
 
+  const messageMember = async (userId: string) => {
+    if (guard()) return;
+    try {
+      const threadId = await dm.getOrCreateThread(userId);
+      const profiles = await community.getProfiles([userId]);
+      onOpenThread({ id: threadId, otherUserId: userId, otherProfile: profiles[userId], lastMessageAt: new Date().toISOString(), isUnread: false });
+    } catch { /* ignore */ }
+  };
+
   return (
     <div className="px-6 pb-24 space-y-4">
+      {members !== null && members.length > 0 && (
+        <div className="relative">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">search</span>
+          <input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder={t('community.searchMembers')}
+            className="w-full pl-10 pr-3 py-2.5 bg-white dark:bg-card-dark border border-gray-100 dark:border-white/5 rounded-2xl text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-primary/50"
+          />
+        </div>
+      )}
       {members === null ? <p className="text-sm text-gray-400 py-6">{t('community.loading')}</p> : (
         <>
           {isAdmin && pending.length > 0 && (
@@ -819,8 +941,13 @@ const MembersTab: React.FC<{ groupId: string; myRole: string; meId: string | nul
                 <Avatar src={m.profile?.avatarUrl ?? undefined} className="size-9 rounded-full" iconClassName="text-sm" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{m.profile?.displayName || '…'}{m.userId === meId ? ` (${t('community.you')})` : ''}</p>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t(roleKey[m.role])}</p>
+                  <span className={`inline-block mt-1 text-[10px] font-bold uppercase tracking-wide border rounded-full px-2 py-0.5 ${roleBadgeStyle[m.role]}`}>{t(roleKey[m.role])}</span>
                 </div>
+                {m.userId !== meId && (
+                  <button onClick={() => messageMember(m.userId)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 shrink-0" title={t('community.messageMember')}>
+                    <span className="material-symbols-outlined text-lg">mail</span>
+                  </button>
+                )}
                 {isAdmin && m.role !== 'owner' && m.userId !== meId && (
                   <select
                     value={m.role}

@@ -7,15 +7,19 @@ import type { QuranReference, GroupReflection } from '../../types';
 interface Props {
   groupId: string;
   existing?: GroupReflection | null;
+  // Seeds a new reflection already tagged to this verse — e.g. "Reflect on
+  // this verse" from the circle chat's Verse of the Day card. Ignored when
+  // editing an existing reflection.
+  prefillRef?: QuranReference | null;
   onDone: (saved: GroupReflection | null) => void;
   onCancel: () => void;
 }
 
-const GroupReflectionEditor: React.FC<Props> = ({ groupId, existing, onDone, onCancel }) => {
+const GroupReflectionEditor: React.FC<Props> = ({ groupId, existing, prefillRef, onDone, onCancel }) => {
   const { t } = useUser();
   const [title, setTitle] = useState(existing?.title ?? '');
   const [body, setBody] = useState(existing?.content ?? '');
-  const [refs, setRefs] = useState<QuranReference[]>(existing?.quranRefs ?? []);
+  const [refs, setRefs] = useState<QuranReference[]>(existing?.quranRefs ?? (prefillRef ? [prefillRef] : []));
   const [showPicker, setShowPicker] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');

@@ -29,6 +29,31 @@ export const subscribeGroupMessages = (
   return () => { supabase.removeChannel(channel); };
 };
 
+// Direct-message thread. The inbox list itself isn't subscribed live (a
+// dynamic per-user set of thread ids doesn't fit a single filter string) —
+// it refetches on tab focus / after sending instead.
+export const subscribeDMMessages = (
+  threadId: string,
+  onInsert: (row: any) => void,
+  onUpdate?: (row: any) => void,
+): (() => void) => {
+  if (!isSupabaseConfigured) return noop;
+  const channel = supabase
+    .channel(`dm_messages:${threadId}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'dm_messages', filter: `thread_id=eq.${threadId}` },
+      payload => onInsert(payload.new),
+    )
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'dm_messages', filter: `thread_id=eq.${threadId}` },
+      payload => onUpdate?.(payload.new),
+    )
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+};
+
 export const subscribeSalawat = (onChange: (s: GlobalSalawat) => void): (() => void) => {
   if (!isSupabaseConfigured) return noop;
   const channel = supabase
