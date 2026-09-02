@@ -706,13 +706,16 @@ const CircleDetail: React.FC<{
 
   const isChatTab = isMember && tab === 'chat';
 
+  // Chat gets exactly the same header/tabs-row treatment as every other Circle tab
+  // (sticky header, tabs-row in normal flow) — it scrolls with the page like
+  // Reflections/Challenges/Members do, instead of living in its own isolated,
+  // fixed-height scroll island. Only the header stays put; the tabs-row scrolls
+  // away like everywhere else. MessageThread's `pageScroll` mode (see ChatTab)
+  // is what makes the message list itself cooperate with that.
   return (
-    <div
-      className={`flex flex-col ${isChatTab ? 'overflow-hidden' : 'min-h-screen'}`}
-      style={isChatTab ? { height: 'calc(100vh - env(safe-area-inset-top, 0px))' } : undefined}
-    >
-      {!isChatTab && <SafeAreaTopFiller />}
-      <header className={`z-10 flex items-center gap-3 px-6 py-3 shrink-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/5 ${isChatTab ? 'relative' : 'sticky sticky-safe-top'}`}>
+    <div className="flex flex-col min-h-screen">
+      <SafeAreaTopFiller />
+      <header className="z-10 flex items-center gap-3 px-6 py-3 shrink-0 sticky sticky-safe-top bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/5">
         <button onClick={onBack} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
           <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
         </button>
@@ -786,15 +789,13 @@ const CircleDetail: React.FC<{
       )}
 
       {isChatTab && (
-        <div className="flex-1 min-h-0 flex flex-col">
-          <ChatTab
-            groupId={groupId}
-            isModerator={isModerator}
-            onGuestAction={guard}
-            verseOfDay={group.verseOfDay}
-            onReflectOnVerse={onReflectOnVerse}
-          />
-        </div>
+        <ChatTab
+          groupId={groupId}
+          isModerator={isModerator}
+          onGuestAction={guard}
+          verseOfDay={group.verseOfDay}
+          onReflectOnVerse={onReflectOnVerse}
+        />
       )}
 
       {isMember && tab === 'reflections' && (

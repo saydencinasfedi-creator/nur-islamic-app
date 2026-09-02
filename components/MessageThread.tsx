@@ -36,6 +36,12 @@ interface Props<T extends ThreadMessage> {
   // Optional: renders above the message list (e.g. the circle's Verse of the Day card).
   pinnedCard?: React.ReactNode;
   heightClass?: string;
+  // When true, the thread scrolls with the page (document) instead of owning its
+  // own fixed-height, internally-scrolling container. Used by circle chat so its
+  // header/tabs-row behave exactly like every other Circle tab (tabs-row scrolls
+  // away normally, only the header stays put) instead of being pinned above an
+  // isolated scroll island. The composer stays `position: fixed` either way.
+  pageScroll?: boolean;
   // Optional: Discord-style quick reactions. Omit entirely where reactions aren't
   // wired up yet (e.g. DMs) — the UI for them just doesn't render.
   loadReactions?: (entityIds: string[]) => Promise<Record<string, ReactionSummary>>;
@@ -62,7 +68,7 @@ const ActionRow: React.FC<{ icon: string; label: string; onClick: () => void; da
 
 function MessageThread<T extends ThreadMessage>({
   threadId, myId, onGuestAction, fetchPage, fetchOne, send, update, softDelete, subscribe,
-  canEdit, canDelete, placeholder, pinnedCard, heightClass, loadReactions, onToggleReaction,
+  canEdit, canDelete, placeholder, pinnedCard, heightClass, pageScroll, loadReactions, onToggleReaction,
 }: Props<T>) {
   const { t } = useUser();
   const [messages, setMessages] = useState<T[]>([]);
@@ -84,10 +90,14 @@ function MessageThread<T extends ThreadMessage>({
   const pressTimer = useRef<number | null>(null);
   const pressStart = useRef<{ x: number; y: number } | null>(null);
 
+  // In container mode the scroll area is scrollRef's own div; in page mode it's the
+  // document itself (there's no bounded, internally-scrolling ancestor to point at).
+  const scrollEl = useCallback((): Element | null => (pageScroll ? document.scrollingElement : scrollRef.current), [pageScroll]);
+
   const scrollToBottom = useCallback(() => {
-    const el = scrollRef.current;
+    const el = scrollEl();
     if (el) el.scrollTop = el.scrollHeight;
-  }, []);
+  }, [scrollEl]);
 
   useEffect(() => {
     let alive = true;
@@ -193,18 +203,27 @@ function MessageThread<T extends ThreadMessage>({
     setEmojiInput('');
   };
 
-  const onScroll = () => {
-    const el = scrollRef.current;
+  const onScroll = useCallback(() => {
+    const el = scrollEl();
     if (!el) return;
-    pinnedBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-  };
+    const clientHeight = pageScroll ? window.innerHeight : el.clientHeight;
+    pinnedBottom.current = el.scrollHeight - el.scrollTop - clientHeight < 80;
+  }, [scrollEl, pageScroll]);
+
+  // Page mode has no div to attach a native onScroll to (nothing there overflows) —
+  // the document itself scrolls, so listen on window instead.
+  useEffect(() => {
+    if (!pageScroll) return;
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [pageScroll, onScroll]);
 
   const loadOlder = async () => {
     if (!messages.length) return;
     const oldest = messages[0].createdAt;
     const older = await fetchPage(threadId, oldest).catch(() => []);
     if (older.length) {
-      const el = scrollRef.current;
+      const el = scrollEl();
       const prevH = el?.scrollHeight ?? 0;
       setMessages(prev => [...older, ...prev]);
       setHasMore(older.length >= 30);
@@ -278,11 +297,13 @@ function MessageThread<T extends ThreadMessage>({
   const composerOpen = !!(replyTarget || editTarget);
 
   return (
-    <div className={`flex flex-col ${heightClass ?? 'h-[calc(100vh-14rem)]'}`}>
+    <div className={pageScroll ? '' : `flex flex-col ${heightClass ?? 'h-[calc(100vh-14rem)]'}`}>
       <div
-        ref={scrollRef}
-        onScroll={onScroll}
-        className={`flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-3 space-y-3 ${composerOpen ? 'pb-36' : 'pb-24'}`}
+        ref={pageScroll ? undefined : scrollRef}
+        onScroll={pageScroll ? undefined : onScroll}
+        className={pageScroll
+          ? `px-4 pt-3 space-y-3 ${composerOpen ? 'pb-36' : 'pb-24'}`
+          : `flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-3 space-y-3 ${composerOpen ? 'pb-36' : 'pb-24'}`}
       >
         {pinnedCard}
         {loading ? (

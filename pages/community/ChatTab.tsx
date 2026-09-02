@@ -32,7 +32,7 @@ const ChatTab: React.FC<Props> = ({ groupId, isModerator, onGuestAction, verseOf
       canEdit={m => m.authorId === authUserId}
       canDelete={m => m.authorId === authUserId || isModerator}
       placeholder={t('community.chatPlaceholder')}
-      heightClass="h-full"
+      pageScroll
       loadReactions={ids => community.listReactions('message', ids)}
       onToggleReaction={(id, emoji, on) => community.toggleReaction('message', id, emoji, on)}
       pinnedCard={verseOfDay ? (
