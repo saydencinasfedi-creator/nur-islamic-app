@@ -68,11 +68,16 @@ const GroupReflectionEditor: React.FC<Props> = ({ groupId, existing, prefillRef,
 
   return (
     <div className="flex flex-col min-h-screen bg-background-light dark:bg-background-dark">
-      <header className="sticky sticky-safe-top z-40 flex items-center gap-3 px-6 pt-4 pb-4 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm">
+      {/* Same camera-safe-area fix as Quran.tsx's reader header. */}
+      <div
+        className="fixed top-0 left-0 right-0 z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm"
+        style={{ height: 'calc(env(safe-area-inset-top, 0px) + 1px)' }}
+      />
+      <header className="sticky sticky-safe-top z-40 flex items-center gap-3 px-6 py-3 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/5">
         <button onClick={onCancel} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
           <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
         </button>
-        <h1 className="text-2xl font-bold tracking-tight flex-1 truncate">{existing ? t('community.editReflection') : t('community.newReflection')}</h1>
+        <h1 className="text-xl font-bold tracking-tight flex-1 truncate">{existing ? t('community.editReflection') : t('community.newReflection')}</h1>
         <button
           onClick={save}
           disabled={!canSave}

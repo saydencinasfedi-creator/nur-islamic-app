@@ -311,22 +311,36 @@ export default Community;
 // Shared small pieces
 // ===========================================================================
 
+// Paints the camera-cutout safe-area strip opaque even once a sticky header below it
+// has scrolled up against it — same fix as Quran.tsx's reader header, otherwise
+// scrolled content shows through that strip. Must be `fixed` (not `absolute`) so it
+// stays pinned to the true viewport regardless of this page's own scroll position.
+const SafeAreaTopFiller: React.FC = () => (
+  <div
+    className="fixed top-0 left-0 right-0 z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm"
+    style={{ height: 'calc(env(safe-area-inset-top, 0px) + 1px)' }}
+  />
+);
+
 const TopHeader: React.FC<{ navigate: (p: PageId) => void }> = ({ navigate }) => {
   const { t } = useUser();
   return (
-    <header className="sticky sticky-safe-top z-40 flex items-center justify-between px-6 pt-4 pb-6 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm">
-      <div className="flex flex-col">
-        <span className="text-xs font-medium text-primary uppercase tracking-wider mb-1">{t('community.theUmmah')}</span>
-        <h2 className="text-slate-900 dark:text-white text-2xl font-bold leading-tight tracking-tight">{t('community.title')}</h2>
-        <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">{t('community.tagline')}</p>
-      </div>
-      <button
-        onClick={() => navigate('notifications')}
-        className="relative flex items-center justify-center rounded-full size-10 text-slate-900 dark:text-white shadow-sm border bg-gray-100 dark:bg-white/5 border-gray-100 dark:border-white/5"
-      >
-        <span className="material-symbols-outlined">notifications</span>
-      </button>
-    </header>
+    <>
+      <SafeAreaTopFiller />
+      <header className="sticky sticky-safe-top z-40 flex items-center justify-between px-6 py-3 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/5">
+        <div className="flex flex-col">
+          <span className="text-xs font-medium text-primary uppercase tracking-wider mb-1">{t('community.theUmmah')}</span>
+          <h2 className="text-slate-900 dark:text-white text-2xl font-bold leading-tight tracking-tight">{t('community.title')}</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">{t('community.tagline')}</p>
+        </div>
+        <button
+          onClick={() => navigate('notifications')}
+          className="relative flex items-center justify-center rounded-full size-10 text-slate-900 dark:text-white shadow-sm border bg-gray-100 dark:bg-white/5 border-gray-100 dark:border-white/5"
+        >
+          <span className="material-symbols-outlined">notifications</span>
+        </button>
+      </header>
+    </>
   );
 };
 
@@ -359,11 +373,12 @@ const TopTabs: React.FC<{ value: TopTab; onChange: (t: TopTab) => void }> = ({ v
 
 const SubScreen: React.FC<{ title: string; onBack: () => void; children: React.ReactNode; right?: React.ReactNode }> = ({ title, onBack, children, right }) => (
   <div className="flex flex-col min-h-screen">
-    <header className="sticky sticky-safe-top z-40 flex items-center gap-3 px-6 pt-4 pb-4 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm">
+    <SafeAreaTopFiller />
+    <header className="sticky sticky-safe-top z-40 flex items-center gap-3 px-6 py-3 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/5">
       <button onClick={onBack} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
         <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
       </button>
-      <h1 className="text-2xl font-bold tracking-tight flex-1 truncate">{title}</h1>
+      <h1 className="text-xl font-bold tracking-tight flex-1 truncate">{title}</h1>
       {right}
     </header>
     <div className="flex-1">{children}</div>
@@ -690,7 +705,8 @@ const CircleDetail: React.FC<{
       className={`flex flex-col ${isChatTab ? 'overflow-hidden' : 'min-h-screen'}`}
       style={isChatTab ? { height: 'calc(100dvh - env(safe-area-inset-top, 0px))' } : undefined}
     >
-      <header className={`z-10 flex items-center gap-3 px-6 pt-4 pb-3 shrink-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm ${isChatTab ? 'relative' : 'sticky sticky-safe-top'}`}>
+      {!isChatTab && <SafeAreaTopFiller />}
+      <header className={`z-10 flex items-center gap-3 px-6 py-3 shrink-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm ${isChatTab ? 'relative' : 'sticky sticky-safe-top border-b border-gray-100 dark:border-white/5'}`}>
         <button onClick={onBack} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
           <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
         </button>

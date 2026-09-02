@@ -62,10 +62,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentPage, navigate }) => {
   }, [showEditSheet]);
 
   return (
-    <div
-      className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-[400px] z-50"
-      style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
-    >
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-[400px] z-50">
       <nav className="bg-white/95 dark:bg-[#1A2E25]/95 backdrop-blur-md rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.3)] border border-gray-200 dark:border-white/10 p-2 flex justify-between items-center px-6 transition-all">
         <button
           onClick={() => navigate('dashboard')}
