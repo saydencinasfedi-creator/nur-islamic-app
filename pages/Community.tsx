@@ -192,7 +192,13 @@ const Community: React.FC<CommunityProps> = ({ navigate, setNavHidden }) => {
   }
 
   return (
-    <div className="relative flex h-auto min-h-screen w-full flex-col overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased transition-colors duration-200 pb-32">
+    // No overflow-hidden here: it establishes a scroll container per the CSS spec, which
+    // breaks position:sticky for every header below (they'd stick relative to this div,
+    // but this div itself never actually scrolls — the real scroll happens on
+    // document.scrollingElement, outside it) — degrading every sticky header to just
+    // scrolling away with the page. Matches Quran.tsx's equivalent wrapper, which never
+    // had this class and whose sticky header works correctly.
+    <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased transition-colors duration-200 pb-32">
       {view === 'top' && (
         <>
           <TopHeader navigate={navigate} />
