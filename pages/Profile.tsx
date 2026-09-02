@@ -93,8 +93,15 @@ const Profile: React.FC<ProfileProps> = ({ navigate, onSignOut }) => {
         // Best-effort: this is also the photo other members see in chat/DMs/member
         // lists (a separate Supabase-backed profile from this local one) — keep them
         // in sync. No-ops quietly on a bypassed/offline build or if the request fails.
+        // saveProfile does a full upsert, so the rest of the existing profile (bio,
+        // age range, languages, interests) must be carried over here too — otherwise
+        // changing your photo would silently wipe them.
         if (!bypassed) {
-          saveProfile({ avatarUrl: result, displayName: communityProfile?.displayName || user?.name || '' }).catch(() => {});
+          saveProfile({
+            ...communityProfile,
+            avatarUrl: result,
+            displayName: communityProfile?.displayName || user?.name || '',
+          }).catch(() => {});
         }
         setShowImageEdit(false);
       };

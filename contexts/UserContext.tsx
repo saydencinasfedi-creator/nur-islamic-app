@@ -172,7 +172,7 @@ const goalsPercent = (goals: Goal[]): number => {
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     // Real identity (Supabase). On a build without Supabase (`bypassed`) this is inert
     // and the app keeps its previous local-only behaviour.
-    const { authUserId, profile: communityProfile, bypassed: authBypassed } = useAuth();
+    const { authUserId, profile: communityProfile, bypassed: authBypassed, saveProfile } = useAuth();
 
     // Persisted locally so the user doesn't have to log in again every time they open the app.
     const [user, setUser] = useState<User | null>(() => {
@@ -200,6 +200,22 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             };
         });
     }, [authBypassed, authUserId, communityProfile?.displayName, communityProfile?.avatarUrl]);
+
+    // Self-heal the other direction, once per signed-in user: someone who set a local
+    // avatar before this sync existed (or who just hasn't reopened Profile since) has a
+    // photo Community has never seen, so members still see the generic icon for them.
+    // saveProfile is a full upsert, so the rest of the profile is carried over as-is.
+    const backfilledAvatarFor = useRef<string | null>(null);
+    useEffect(() => {
+        if (authBypassed || !authUserId) return;
+        if (!communityProfile || communityProfile.avatarUrl) return; // not loaded yet, or already has one
+        if (!user?.avatar) return;
+        if (backfilledAvatarFor.current === authUserId) return;
+        backfilledAvatarFor.current = authUserId;
+        saveProfile({ ...communityProfile, avatarUrl: user.avatar }).catch(() => { backfilledAvatarFor.current = null; });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [authBypassed, authUserId, communityProfile, user?.avatar]);
+
     const [location, setLocation] = useState<Location | null>(() => {
         const saved = localStorage.getItem('nurLocation');
         return saved ? JSON.parse(saved) : null;

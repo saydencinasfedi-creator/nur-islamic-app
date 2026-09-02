@@ -5,6 +5,7 @@ import * as dm from '../../services/dmService';
 import { subscribeDMMessages } from '../../services/communityRealtime';
 import MessageThread from '../../components/MessageThread';
 import Avatar from '../../components/Avatar';
+import SafeAreaTopFiller from '../../components/SafeAreaTopFiller';
 import type { DMMessage, CommunityProfile } from '../../types';
 
 interface Props {
@@ -21,9 +22,13 @@ const DMThreadView: React.FC<Props> = ({ threadId, otherProfile, onBack, onGuest
   // Mark read on open — best-effort, no need to block the UI on it.
   useEffect(() => { dm.markThreadRead(threadId).catch(() => {}); }, [threadId]);
 
+  // Same treatment as CircleDetail's chat tab: sticky header, everything else
+  // (including the message list) scrolls with the page instead of living in an
+  // isolated, fixed-height scroll island — see MessageThread's `pageScroll` mode.
   return (
-    <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - env(safe-area-inset-top, 0px))' }}>
-      <header className="relative z-10 flex items-center gap-3 p-6 shrink-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/5">
+    <div className="flex flex-col min-h-screen">
+      <SafeAreaTopFiller />
+      <header className="z-10 flex items-center gap-3 px-6 py-3 shrink-0 sticky sticky-safe-top bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/5">
         <button onClick={onBack} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
           <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
         </button>
@@ -31,23 +36,21 @@ const DMThreadView: React.FC<Props> = ({ threadId, otherProfile, onBack, onGuest
         <h1 className="text-xl font-bold tracking-tight flex-1 truncate">{otherProfile?.displayName || '…'}</h1>
       </header>
 
-      <div className="flex-1 min-h-0 flex flex-col">
-        <MessageThread<DMMessage>
-          threadId={threadId}
-          myId={authUserId}
-          onGuestAction={onGuestAction}
-          fetchPage={dm.listMessages}
-          fetchOne={dm.getMessage}
-          send={dm.sendMessage}
-          update={dm.updateMessage}
-          softDelete={dm.softDeleteMessage}
-          subscribe={subscribeDMMessages}
-          canEdit={m => m.authorId === authUserId}
-          canDelete={m => m.authorId === authUserId}
-          placeholder={t('community.dmPlaceholder')}
-          heightClass="h-full"
-        />
-      </div>
+      <MessageThread<DMMessage>
+        threadId={threadId}
+        myId={authUserId}
+        onGuestAction={onGuestAction}
+        fetchPage={dm.listMessages}
+        fetchOne={dm.getMessage}
+        send={dm.sendMessage}
+        update={dm.updateMessage}
+        softDelete={dm.softDeleteMessage}
+        subscribe={subscribeDMMessages}
+        canEdit={m => m.authorId === authUserId}
+        canDelete={m => m.authorId === authUserId}
+        placeholder={t('community.dmPlaceholder')}
+        pageScroll
+      />
     </div>
   );
 };

@@ -15,6 +15,7 @@ import * as dm from '../services/dmService';
 import { subscribeSalawat, subscribeDuaRequests } from '../services/communityRealtime';
 import { rearmChallengeNotifications } from '../services/communityNotifications';
 import Avatar from '../components/Avatar';
+import SafeAreaTopFiller from '../components/SafeAreaTopFiller';
 import GoalIcon from '../components/GoalIcon';
 import MarkdownContent from '../components/MarkdownContent';
 import PrivacyBadge from '../components/PrivacyBadge';
@@ -316,17 +317,6 @@ export default Community;
 // ===========================================================================
 // Shared small pieces
 // ===========================================================================
-
-// Paints the camera-cutout safe-area strip opaque even once a sticky header below it
-// has scrolled up against it — same fix as Quran.tsx's reader header, otherwise
-// scrolled content shows through that strip. Must be `fixed` (not `absolute`) so it
-// stays pinned to the true viewport regardless of this page's own scroll position.
-const SafeAreaTopFiller: React.FC = () => (
-  <div
-    className="fixed top-0 left-0 right-0 z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm"
-    style={{ height: 'calc(env(safe-area-inset-top, 0px) + 1px)' }}
-  />
-);
 
 const TopHeader: React.FC<{ navigate: (p: PageId) => void }> = ({ navigate }) => {
   const { t } = useUser();
