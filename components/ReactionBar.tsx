@@ -2,10 +2,13 @@ import React from 'react';
 import type { ReactionEmoji } from '../types';
 import type { ReactionSummary } from '../services/communityService';
 
-const EMOJI: { key: ReactionEmoji; char: string }[] = [
+export const EMOJI: { key: ReactionEmoji; char: string }[] = [
   { key: 'heart', char: '❤️' },
   { key: 'dua', char: '🤲' },
   { key: 'like', char: '👍' },
+  { key: 'laugh', char: '😂' },
+  { key: 'wow', char: '😮' },
+  { key: 'sad', char: '😢' },
 ];
 
 interface Props {

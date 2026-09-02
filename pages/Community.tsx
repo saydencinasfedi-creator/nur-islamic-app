@@ -709,7 +709,7 @@ const CircleDetail: React.FC<{
   return (
     <div
       className={`flex flex-col ${isChatTab ? 'overflow-hidden' : 'min-h-screen'}`}
-      style={isChatTab ? { height: 'calc(100dvh - env(safe-area-inset-top, 0px))' } : undefined}
+      style={isChatTab ? { height: 'calc(100vh - env(safe-area-inset-top, 0px))' } : undefined}
     >
       {!isChatTab && <SafeAreaTopFiller />}
       <header className={`z-10 flex items-center gap-3 px-6 py-3 shrink-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/5 ${isChatTab ? 'relative' : 'sticky sticky-safe-top'}`}>

@@ -312,7 +312,7 @@ export interface GroupReflectionComment {
   author?: CommunityProfile;
 }
 
-export type ReactionEmoji = 'heart' | 'dua' | 'like';
+export type ReactionEmoji = 'heart' | 'dua' | 'like' | 'laugh' | 'wow' | 'sad';
 export type ReactionEntityType = 'message' | 'reflection' | 'comment';
 
 export interface CommunityReaction {

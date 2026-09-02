@@ -33,6 +33,8 @@ const ChatTab: React.FC<Props> = ({ groupId, isModerator, onGuestAction, verseOf
       canDelete={m => m.authorId === authUserId || isModerator}
       placeholder={t('community.chatPlaceholder')}
       heightClass="h-full"
+      loadReactions={ids => community.listReactions('message', ids)}
+      onToggleReaction={(id, emoji, on) => community.toggleReaction('message', id, emoji, on)}
       pinnedCard={verseOfDay ? (
         <div className="bg-white dark:bg-card-dark rounded-2xl p-4 relative overflow-hidden border border-gray-100 dark:border-white/5 mb-1">
           <div className="absolute -right-6 -top-6 size-24 bg-primary/10 rounded-full blur-2xl"></div>

@@ -2,7 +2,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUser } from '../contexts/UserContext';
 import CommunitySheet from './CommunitySheet';
 import Avatar from './Avatar';
-import type { CommunityProfile } from '../types';
+import { EMOJI } from './ReactionBar';
+import type { ReactionSummary } from '../services/communityService';
+import type { CommunityProfile, ReactionEmoji } from '../types';
 
 // Structural shape both GroupMessage and DMMessage satisfy — this component
 // doesn't care whether a message belongs to a circle or a DM thread, only
@@ -34,10 +36,17 @@ interface Props<T extends ThreadMessage> {
   // Optional: renders above the message list (e.g. the circle's Verse of the Day card).
   pinnedCard?: React.ReactNode;
   heightClass?: string;
+  // Optional: Discord-style quick reactions. Omit entirely where reactions aren't
+  // wired up yet (e.g. DMs) — the UI for them just doesn't render.
+  loadReactions?: (entityIds: string[]) => Promise<Record<string, ReactionSummary>>;
+  onToggleReaction?: (entityId: string, emoji: ReactionEmoji, currentlyOn: boolean) => Promise<void>;
 }
 
 const LONG_PRESS_MS = 450;
 const MOVE_CANCEL_PX = 12;
+
+const formatTime = (iso: string): string =>
+  new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
 const ActionRow: React.FC<{ icon: string; label: string; onClick: () => void; danger?: boolean }> = ({ icon, label, onClick, danger }) => (
   <button
@@ -53,7 +62,7 @@ const ActionRow: React.FC<{ icon: string; label: string; onClick: () => void; da
 
 function MessageThread<T extends ThreadMessage>({
   threadId, myId, onGuestAction, fetchPage, fetchOne, send, update, softDelete, subscribe,
-  canEdit, canDelete, placeholder, pinnedCard, heightClass,
+  canEdit, canDelete, placeholder, pinnedCard, heightClass, loadReactions, onToggleReaction,
 }: Props<T>) {
   const { t } = useUser();
   const [messages, setMessages] = useState<T[]>([]);
@@ -65,6 +74,7 @@ function MessageThread<T extends ThreadMessage>({
   const [replyTarget, setReplyTarget] = useState<T | null>(null);
   const [editTarget, setEditTarget] = useState<T | null>(null);
   const [repliedCache, setRepliedCache] = useState<Record<string, T>>({});
+  const [reactions, setReactions] = useState<Record<string, ReactionSummary>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const pinnedBottom = useRef(true);
@@ -135,6 +145,34 @@ function MessageThread<T extends ThreadMessage>({
   }, [messages, repliedCache]);
 
   const findReplied = (id: string): T | undefined => messages.find(x => x.id === id) ?? repliedCache[id];
+
+  // Reactions: reload the whole visible window's summary whenever the message list
+  // changes (new arrival, page load). No live subscription — matches how reflection
+  // reactions already work (refetch after your own toggle, not a realtime feed).
+  useEffect(() => {
+    if (!loadReactions || !messages.length) return;
+    let alive = true;
+    loadReactions(messages.map(m => m.id)).then(map => { if (alive) setReactions(map); }).catch(() => {});
+    return () => { alive = false; };
+  }, [messages, loadReactions]);
+
+  const handleToggleReaction = async (entityId: string, emoji: ReactionEmoji, currentlyOn: boolean) => {
+    if (!onToggleReaction) return;
+    setReactions(prev => {
+      const cur = prev[entityId] ?? { counts: {}, mine: [] };
+      const counts = { ...cur.counts };
+      const next = (counts[emoji] ?? 0) + (currentlyOn ? -1 : 1);
+      if (next > 0) counts[emoji] = next; else delete counts[emoji];
+      const mine = currentlyOn ? cur.mine.filter(e => e !== emoji) : [...cur.mine, emoji];
+      return { ...prev, [entityId]: { counts, mine } };
+    });
+    try {
+      await onToggleReaction(entityId, emoji, currentlyOn);
+    } catch {
+      // best-effort: re-sync this one entity from the server on failure
+      loadReactions?.([entityId]).then(map => setReactions(prev => ({ ...prev, ...map }))).catch(() => {});
+    }
+  };
 
   const onScroll = () => {
     const el = scrollRef.current;
@@ -242,7 +280,7 @@ function MessageThread<T extends ThreadMessage>({
               const replied = m.replyTo ? findReplied(m.replyTo) : undefined;
               return (
                 <div key={m.id} className={`flex gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
-                  {!mine && <Avatar src={m.author?.avatarUrl ?? undefined} className="size-7 rounded-full shrink-0 mt-1" iconClassName="text-sm" />}
+                  <Avatar src={m.author?.avatarUrl ?? undefined} className="size-7 rounded-full shrink-0 mt-1" iconClassName="text-sm" />
                   <div className={`max-w-[76%] ${mine ? 'items-end' : 'items-start'} flex flex-col`}>
                     {!mine && <span className="text-[11px] text-gray-500 dark:text-gray-400 px-1 mb-0.5">{m.author?.displayName || '…'}</span>}
                     <div
@@ -273,6 +311,34 @@ function MessageThread<T extends ThreadMessage>({
                         </span>
                       )}
                     </div>
+                    {!m.deletedAt && reactions[m.id] && Object.keys(reactions[m.id].counts).length > 0 && (
+                      <div className={`flex flex-wrap gap-1 mt-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                        {EMOJI.map(({ key, char }) => {
+                          const count = reactions[m.id]?.counts[key] ?? 0;
+                          if (!count) return null;
+                          const on = !!reactions[m.id]?.mine.includes(key);
+                          return (
+                            <button
+                              key={key}
+                              onClick={() => handleToggleReaction(m.id, key, on)}
+                              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[11px] transition-colors ${
+                                on
+                                  ? 'bg-primary/15 border-primary/30 text-primary'
+                                  : 'bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400'
+                              }`}
+                            >
+                              <span>{char}</span>
+                              <span className="font-bold tabular-nums">{count}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {!m.deletedAt && (
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 px-1 mt-0.5">
+                        {formatTime(m.createdAt)}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -329,6 +395,22 @@ function MessageThread<T extends ThreadMessage>({
       <CommunitySheet isOpen={!!actionMessage} onClose={() => setActionMessage(null)} title={t('community.messageActions')}>
         {actionMessage && (
           <div className="space-y-1 -mt-2">
+            {onToggleReaction && (
+              <div className="flex items-center justify-between px-1 pb-2 mb-1 border-b border-gray-100 dark:border-white/5">
+                {EMOJI.map(({ key, char }) => {
+                  const on = !!reactions[actionMessage.id]?.mine.includes(key);
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => { handleToggleReaction(actionMessage.id, key, on); setActionMessage(null); }}
+                      className={`size-9 rounded-full flex items-center justify-center text-lg transition-transform hover:scale-110 ${on ? 'bg-primary/15' : ''}`}
+                    >
+                      {char}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <ActionRow
               icon="reply"
               label={t('community.reply')}
