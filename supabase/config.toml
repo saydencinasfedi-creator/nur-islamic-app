@@ -416,6 +416,12 @@ s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
 
+[functions.push-on-new-message]
+# Called only by the group_messages/dm_messages triggers (via pg_net), not by a
+# signed-in user — there's no Supabase session JWT to verify. It checks its own
+# shared secret (PUSH_SHARED_SECRET) instead — see supabase/functions/push-on-new-message.
+verify_jwt = false
+
 # pg-delta is the schema diff engine for db diff / db pull / db remote commit.
 # Set enabled = false to fall back to the legacy migra engine.
 [experimental.pgdelta]

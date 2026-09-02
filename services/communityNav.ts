@@ -13,9 +13,14 @@ export const consumeReturnToCommunity = () => {
   return v;
 };
 
-// Set by e.g. a dashboard shortcut → Community opens straight to this circle.
-let pendingCommunityTarget: { groupId: string } | null = null;
-export const setPendingCommunityTarget = (v: { groupId: string } | null) => { pendingCommunityTarget = v; };
+// Set by e.g. a dashboard shortcut, or a tapped push notification (see
+// services/pushNotifications.ts) → Community opens straight to this circle or DM.
+export type PendingCommunityTarget =
+  | { groupId: string }
+  | { dmThreadId: string; otherUserId: string };
+
+let pendingCommunityTarget: PendingCommunityTarget | null = null;
+export const setPendingCommunityTarget = (v: PendingCommunityTarget | null) => { pendingCommunityTarget = v; };
 export const consumePendingCommunityTarget = () => {
   const v = pendingCommunityTarget;
   pendingCommunityTarget = null;

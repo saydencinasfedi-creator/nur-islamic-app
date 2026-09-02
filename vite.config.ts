@@ -18,6 +18,12 @@ export default defineConfig(({ mode }) => {
       // key must never appear here.
       'process.env.SUPABASE_URL': JSON.stringify(env.SUPABASE_URL),
       'process.env.SUPABASE_ANON_KEY': JSON.stringify(env.SUPABASE_ANON_KEY),
+      // Gates services/pushNotifications.ts's call to PushNotifications.register().
+      // Calling it without android/app/google-services.json in place doesn't just
+      // fail quietly — FirebaseMessaging.getInstance() throws synchronously inside
+      // the native plugin call, which crashes the whole app (confirmed via logcat,
+      // not a guess). Only flip this on once google-services.json is actually there.
+      'process.env.FCM_ENABLED': JSON.stringify(env.FCM_ENABLED === 'true' ? 'true' : 'false'),
     },
     resolve: {
       alias: {

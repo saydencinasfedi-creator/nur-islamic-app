@@ -239,6 +239,9 @@ export const community = {
     'community.linkEmail': 'Enviar enlace de confirmación',
     'community.guestEmailSent': 'Revisa {{email}} para confirmar, y luego podrás participar.',
 
+    // --- notifications ---
+    'community.muteNotifications': 'Silenciar notificaciones',
+
     // --- report ---
     'community.report': 'Reportar',
     'community.reportTitle': 'Reportar a los admins',

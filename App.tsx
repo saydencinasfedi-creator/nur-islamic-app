@@ -1,8 +1,11 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
+import { PushNotifications } from '@capacitor/push-notifications';
 import { PageId } from './types';
 import { consumeBackPress } from './services/backHandlerStack';
+import { setPendingCommunityTarget } from './services/communityNav';
+import { initPush, communityTargetFromPushData } from './services/pushNotifications';
 
 // The fixed "Up" destination for each screen — where the system back button/gesture should
 // go, regardless of the actual path the user took to get here. Screens without an entry
@@ -121,8 +124,8 @@ const computeStartPage = (
 };
 
 const AppContent: React.FC = () => {
-  const { user, signOut, updateLocation, markGoalDone } = useUser();
-  const { bypassed, session, needsProfileSetup, recoveryMode, pendingInviteCode, signOut: authSignOut } = useAuth();
+  const { user, signOut, updateLocation, markGoalDone, addNotification } = useUser();
+  const { bypassed, session, authUserId, needsProfileSetup, recoveryMode, pendingInviteCode, signOut: authSignOut } = useAuth();
   useNotificationEngine();
   // Auth gate: onboarding/auth until there's a session, then a one-time profile
   // setup, then the app. On a build without Supabase (bypassed) we keep the old
@@ -294,6 +297,35 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (pendingInviteCode && currentPageRef.current !== 'community') navigate('community');
   }, [pendingInviteCode, navigate]);
+
+  // Register this device for push once there's a real signed-in session (guests
+  // included — see services/pushNotifications.ts).
+  useEffect(() => {
+    if (bypassed || !authUserId) return;
+    initPush().catch(() => {});
+  }, [bypassed, authUserId]);
+
+  // Push notification tapped (foreground, background, or the tap that launched the
+  // app from killed — Capacitor replays it once this listener is attached) — jump
+  // to Community, which consumes the pending target exactly like an invite link.
+  // Received while foregrounded: surface it in the existing in-app inbox (same one
+  // prayer/goal/streak/challenge reminders already use).
+  useEffect(() => {
+    const tapPromise = PushNotifications.addListener('pushNotificationActionPerformed', action => {
+      const target = communityTargetFromPushData(action.notification.data ?? {});
+      if (target) {
+        setPendingCommunityTarget(target);
+        navigate('community');
+      }
+    });
+    const receivedPromise = PushNotifications.addListener('pushNotificationReceived', notification => {
+      addNotification({ type: 'community', title: notification.title ?? 'Nur', body: notification.body ?? '' });
+    });
+    return () => {
+      tapPromise.then(handle => handle.remove());
+      receivedPromise.then(handle => handle.remove());
+    };
+  }, [navigate, addNotification]);
 
   const handleSignOut = () => {
     signOut();

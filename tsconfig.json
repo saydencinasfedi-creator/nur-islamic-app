@@ -25,5 +25,9 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  // Deno Edge Functions (supabase/functions) run under a different runtime with
+  // their own ambient globals (Deno.*) and npm:/jsr: specifiers — not this
+  // project's web app, and not meant to be type-checked by its tsconfig.
+  "exclude": ["supabase/functions"]
 }

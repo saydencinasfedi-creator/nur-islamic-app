@@ -12,6 +12,7 @@ import { setReturnToCommunity, consumeReturnToCommunity, consumePendingCommunity
 import * as community from '../services/communityService';
 import type { ReactionSummary } from '../services/communityService';
 import * as dm from '../services/dmService';
+import * as notificationPrefs from '../services/notificationPrefs';
 import { subscribeSalawat, subscribeDuaRequests } from '../services/communityRealtime';
 import { rearmChallengeNotifications } from '../services/communityNotifications';
 import Avatar from '../components/Avatar';
@@ -117,7 +118,25 @@ const Community: React.FC<CommunityProps> = ({ navigate, setNavHidden }) => {
       return;
     }
     const target = consumePendingCommunityTarget();
-    if (target) { setActiveGroupId(target.groupId); setCircleTab('chat'); setView('circle'); }
+    if (target) {
+      if ('groupId' in target) {
+        setActiveGroupId(target.groupId); setCircleTab('chat'); setView('circle');
+      } else {
+        // A tapped push notification for a DM (services/pushNotifications.ts) — only
+        // the thread + other-user id travel in the notification payload, so fetch
+        // their profile before opening, same as MembersTab's "Message" button does.
+        community.getProfiles([target.otherUserId]).then(profiles => {
+          setActiveThread({
+            id: target.dmThreadId,
+            otherUserId: target.otherUserId,
+            otherProfile: profiles[target.otherUserId],
+            lastMessageAt: new Date().toISOString(),
+            isUnread: false,
+          });
+          setView('dm-thread');
+        }).catch(() => {});
+      }
+    }
   }, [bypassed]);
 
   // ---- invite link (com.fedi.nur://invite/<code>) tapped ----
@@ -654,9 +673,16 @@ const CircleDetail: React.FC<{
   const [showInvite, setShowInvite] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [notifMuted, setNotifMuted] = useState(false);
 
   const load = useCallback(() => { community.getGroup(groupId).then(setGroup).catch(() => {}); }, [groupId]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { notificationPrefs.isMuted('group', groupId).then(setNotifMuted).catch(() => {}); }, [groupId]);
+  const toggleNotifMuted = async () => {
+    const next = !notifMuted;
+    setNotifMuted(next); // optimistic — this is a personal preference, not worth blocking on
+    notificationPrefs.setMuted('group', groupId, next).catch(() => setNotifMuted(!next));
+  };
 
   if (!group) {
     return <SubScreen title="" onBack={onBack}><p className="text-center text-sm text-gray-400 py-10">{t('community.loading')}</p></SubScreen>;
@@ -771,6 +797,13 @@ const CircleDetail: React.FC<{
           {isMember && (
             <div className="space-y-2 pt-2">
               {isAdmin && <button onClick={() => setShowInvite(true)} className={ghostBtn}>{t('community.inviteTitle')}</button>}
+              <label className="w-full flex items-center justify-between text-sm font-medium py-2 text-slate-700 dark:text-gray-300">
+                <span className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-lg text-gray-400">{notifMuted ? 'notifications_off' : 'notifications'}</span>
+                  {t('community.muteNotifications')}
+                </span>
+                <input type="checkbox" checked={notifMuted} onChange={toggleNotifMuted} className="size-5 accent-primary" />
+              </label>
               <button onClick={() => setShowReport(true)} className="w-full text-sm font-medium py-2 text-gray-500 dark:text-gray-400">{t('community.report')}</button>
               <button onClick={doLeave} className="w-full text-sm font-bold py-2 text-red-500 dark:text-red-400">{t('community.leave')}</button>
             </div>
