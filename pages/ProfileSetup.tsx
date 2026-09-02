@@ -15,7 +15,7 @@ const AGE_RANGES: { value: AgeRange; labelKey: TranslationKey }[] = [
 ];
 
 const ProfileSetup: React.FC = () => {
-  const { t } = useUser();
+  const { t, user } = useUser();
   const { saveProfile, profile } = useAuth();
 
   const initialName = (() => {
@@ -38,6 +38,9 @@ const ProfileSetup: React.FC = () => {
         displayName: displayName.trim(),
         bio: bio.trim() || null,
         ageRange: ageRange ?? undefined,
+        // Carries over a photo already set locally (the "local" and Community
+        // profiles are separate records) so it doesn't take a second upload.
+        avatarUrl: user?.avatar ?? undefined,
       });
       try { sessionStorage.removeItem('nurPendingDisplayName'); } catch { /* ignore */ }
       // App.tsx routes to the dashboard once needsProfileSetup clears.

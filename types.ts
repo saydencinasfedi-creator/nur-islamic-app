@@ -312,7 +312,9 @@ export interface GroupReflectionComment {
   author?: CommunityProfile;
 }
 
-export type ReactionEmoji = 'heart' | 'dua' | 'like' | 'laugh' | 'wow' | 'sad';
+// Any single emoji is a valid reaction — the curated names below are just the
+// built-in quick-react defaults, not an enum of what's allowed server-side.
+export type ReactionEmoji = string;
 export type ReactionEntityType = 'message' | 'reflection' | 'comment';
 
 export interface CommunityReaction {

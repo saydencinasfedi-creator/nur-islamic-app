@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUser } from '../contexts/UserContext';
 import CommunitySheet from './CommunitySheet';
 import Avatar from './Avatar';
-import { EMOJI } from './ReactionBar';
+import { getTopEmojis, recordEmojiUse } from '../services/emojiUsage';
 import type { ReactionSummary } from '../services/communityService';
 import type { CommunityProfile, ReactionEmoji } from '../types';
 
@@ -75,6 +75,9 @@ function MessageThread<T extends ThreadMessage>({
   const [editTarget, setEditTarget] = useState<T | null>(null);
   const [repliedCache, setRepliedCache] = useState<Record<string, T>>({});
   const [reactions, setReactions] = useState<Record<string, ReactionSummary>>({});
+  const [emojiPickerFor, setEmojiPickerFor] = useState<T | null>(null);
+  const [emojiInput, setEmojiInput] = useState('');
+  const emojiInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const pinnedBottom = useRef(true);
@@ -156,8 +159,15 @@ function MessageThread<T extends ThreadMessage>({
     return () => { alive = false; };
   }, [messages, loadReactions]);
 
+  // Autofocus the emoji-picker input as soon as it opens — the device's own emoji
+  // keyboard is the actual "picker" here, so this is what pops it up.
+  useEffect(() => {
+    if (emojiPickerFor) requestAnimationFrame(() => emojiInputRef.current?.focus());
+  }, [emojiPickerFor]);
+
   const handleToggleReaction = async (entityId: string, emoji: ReactionEmoji, currentlyOn: boolean) => {
     if (!onToggleReaction) return;
+    if (!currentlyOn) recordEmojiUse(emoji); // feeds the personalized quick-bar
     setReactions(prev => {
       const cur = prev[entityId] ?? { counts: {}, mine: [] };
       const counts = { ...cur.counts };
@@ -172,6 +182,15 @@ function MessageThread<T extends ThreadMessage>({
       // best-effort: re-sync this one entity from the server on failure
       loadReactions?.([entityId]).then(map => setReactions(prev => ({ ...prev, ...map }))).catch(() => {});
     }
+  };
+
+  const submitCustomEmoji = () => {
+    const emoji = emojiInput.trim();
+    if (!emoji || !emojiPickerFor) return;
+    const on = !!reactions[emojiPickerFor.id]?.mine.includes(emoji);
+    handleToggleReaction(emojiPickerFor.id, emoji, on);
+    setEmojiPickerFor(null);
+    setEmojiInput('');
   };
 
   const onScroll = () => {
@@ -280,7 +299,7 @@ function MessageThread<T extends ThreadMessage>({
               const replied = m.replyTo ? findReplied(m.replyTo) : undefined;
               return (
                 <div key={m.id} className={`flex gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
-                  <Avatar src={m.author?.avatarUrl ?? undefined} className="size-7 rounded-full shrink-0 mt-1" iconClassName="text-sm" />
+                  {!mine && <Avatar src={m.author?.avatarUrl ?? undefined} className="size-7 rounded-full shrink-0 mt-1" iconClassName="text-sm" />}
                   <div className={`max-w-[76%] ${mine ? 'items-end' : 'items-start'} flex flex-col`}>
                     {!mine && <span className="text-[11px] text-gray-500 dark:text-gray-400 px-1 mb-0.5">{m.author?.displayName || '…'}</span>}
                     <div
@@ -313,21 +332,20 @@ function MessageThread<T extends ThreadMessage>({
                     </div>
                     {!m.deletedAt && reactions[m.id] && Object.keys(reactions[m.id].counts).length > 0 && (
                       <div className={`flex flex-wrap gap-1 mt-1 ${mine ? 'justify-end' : 'justify-start'}`}>
-                        {EMOJI.map(({ key, char }) => {
-                          const count = reactions[m.id]?.counts[key] ?? 0;
+                        {Object.entries(reactions[m.id].counts).map(([emoji, count]) => {
                           if (!count) return null;
-                          const on = !!reactions[m.id]?.mine.includes(key);
+                          const on = !!reactions[m.id]?.mine.includes(emoji);
                           return (
                             <button
-                              key={key}
-                              onClick={() => handleToggleReaction(m.id, key, on)}
+                              key={emoji}
+                              onClick={() => handleToggleReaction(m.id, emoji, on)}
                               className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[11px] transition-colors ${
                                 on
                                   ? 'bg-primary/15 border-primary/30 text-primary'
                                   : 'bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400'
                               }`}
                             >
-                              <span>{char}</span>
+                              <span>{emoji}</span>
                               <span className="font-bold tabular-nums">{count}</span>
                             </button>
                           );
@@ -397,18 +415,25 @@ function MessageThread<T extends ThreadMessage>({
           <div className="space-y-1 -mt-2">
             {onToggleReaction && (
               <div className="flex items-center justify-between px-1 pb-2 mb-1 border-b border-gray-100 dark:border-white/5">
-                {EMOJI.map(({ key, char }) => {
-                  const on = !!reactions[actionMessage.id]?.mine.includes(key);
+                {getTopEmojis().map(emoji => {
+                  const on = !!reactions[actionMessage.id]?.mine.includes(emoji);
                   return (
                     <button
-                      key={key}
-                      onClick={() => { handleToggleReaction(actionMessage.id, key, on); setActionMessage(null); }}
+                      key={emoji}
+                      onClick={() => { handleToggleReaction(actionMessage.id, emoji, on); setActionMessage(null); }}
                       className={`size-9 rounded-full flex items-center justify-center text-lg transition-transform hover:scale-110 ${on ? 'bg-primary/15' : ''}`}
                     >
-                      {char}
+                      {emoji}
                     </button>
                   );
                 })}
+                <button
+                  onClick={() => { setEmojiPickerFor(actionMessage); setActionMessage(null); }}
+                  title={t('community.pickAnyEmoji')}
+                  className="size-9 rounded-full flex items-center justify-center bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-lg">add</span>
+                </button>
               </div>
             )}
             <ActionRow
@@ -438,6 +463,27 @@ function MessageThread<T extends ThreadMessage>({
             )}
           </div>
         )}
+      </CommunitySheet>
+
+      <CommunitySheet isOpen={!!emojiPickerFor} onClose={() => { setEmojiPickerFor(null); setEmojiInput(''); }} title={t('community.pickAnyEmoji')}>
+        <p className="text-xs text-gray-500 dark:text-gray-400 -mt-2">{t('community.pickAnyEmojiHint')}</p>
+        <div className="flex items-center gap-2">
+          <input
+            ref={emojiInputRef}
+            value={emojiInput}
+            onChange={e => setEmojiInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submitCustomEmoji(); } }}
+            placeholder="😊"
+            className="flex-1 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-2xl text-center outline-none focus:ring-1 focus:ring-primary"
+          />
+          <button
+            onClick={submitCustomEmoji}
+            disabled={!emojiInput.trim()}
+            className="h-[52px] px-5 rounded-xl bg-primary text-background-dark font-bold text-sm disabled:opacity-40 shrink-0"
+          >
+            {t('community.react')}
+          </button>
+        </div>
       </CommunitySheet>
     </div>
   );

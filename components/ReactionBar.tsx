@@ -2,13 +2,18 @@ import React from 'react';
 import type { ReactionEmoji } from '../types';
 import type { ReactionSummary } from '../services/communityService';
 
+// The reaction *is* the emoji now (no symbolic name layer) — simplest thing that
+// works once the server accepts any emoji rather than a fixed enum (see
+// supabase/migrations/20260902110000_free_reaction_emoji.sql). This curated list is
+// just the built-in default set; services/emojiUsage.ts's personalized quick-bar
+// falls back to it for a new user with no reaction history yet.
 export const EMOJI: { key: ReactionEmoji; char: string }[] = [
-  { key: 'heart', char: '❤️' },
-  { key: 'dua', char: '🤲' },
-  { key: 'like', char: '👍' },
-  { key: 'laugh', char: '😂' },
-  { key: 'wow', char: '😮' },
-  { key: 'sad', char: '😢' },
+  { key: '❤️', char: '❤️' },
+  { key: '🤲', char: '🤲' },
+  { key: '👍', char: '👍' },
+  { key: '😂', char: '😂' },
+  { key: '😮', char: '😮' },
+  { key: '😢', char: '😢' },
 ];
 
 interface Props {

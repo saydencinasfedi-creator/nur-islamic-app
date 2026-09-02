@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { PageId, User } from '../types';
 import Avatar from '../components/Avatar';
 import { useUser } from '../contexts/UserContext';
+import { useAuth } from '../contexts/AuthContext';
 import { pushBackHandler } from '../services/backHandlerStack';
 
 interface ProfileProps {
@@ -13,6 +14,7 @@ interface ProfileProps {
 
 const Profile: React.FC<ProfileProps> = ({ navigate, onSignOut }) => {
   const { user, updateUser, location, updateLocationManual, totalPrayersCompleted, prayerStreak, goalsTodayPercent, notifSettings, updateNotifSettings, t } = useUser();
+  const { bypassed, profile: communityProfile, saveProfile } = useAuth();
 
   // Modal States
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -88,6 +90,12 @@ const Profile: React.FC<ProfileProps> = ({ navigate, onSignOut }) => {
       reader.onloadend = () => {
         const result = reader.result as string;
         updateUser({ avatar: result });
+        // Best-effort: this is also the photo other members see in chat/DMs/member
+        // lists (a separate Supabase-backed profile from this local one) — keep them
+        // in sync. No-ops quietly on a bypassed/offline build or if the request fails.
+        if (!bypassed) {
+          saveProfile({ avatarUrl: result, displayName: communityProfile?.displayName || user?.name || '' }).catch(() => {});
+        }
         setShowImageEdit(false);
       };
       reader.readAsDataURL(file);

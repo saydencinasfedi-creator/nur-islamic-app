@@ -198,7 +198,7 @@ const Community: React.FC<CommunityProps> = ({ navigate, setNavHidden }) => {
     // document.scrollingElement, outside it) — degrading every sticky header to just
     // scrolling away with the page. Matches Quran.tsx's equivalent wrapper, which never
     // had this class and whose sticky header works correctly.
-    <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased transition-colors duration-200 pb-32">
+    <div className={`relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased transition-colors duration-200 ${view === 'top' ? 'pb-32' : ''}`}>
       {view === 'top' && (
         <>
           <TopHeader navigate={navigate} />
