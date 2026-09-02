@@ -297,12 +297,17 @@ function MessageThread<T extends ThreadMessage>({
   const composerOpen = !!(replyTarget || editTarget);
 
   return (
-    <div className={pageScroll ? '' : `flex flex-col ${heightClass ?? 'h-[calc(100vh-14rem)]'}`}>
+    <div className={pageScroll ? 'flex-1 flex flex-col' : `flex flex-col ${heightClass ?? 'h-[calc(100vh-14rem)]'}`}>
       <div
         ref={pageScroll ? undefined : scrollRef}
         onScroll={pageScroll ? undefined : onScroll}
+        // Page mode: `flex-1 justify-end` is the sticky-footer trick — a short
+        // conversation sits flush at the bottom (empty space above it, like
+        // WhatsApp/Discord) instead of stranded right under the header; once there's
+        // enough to fill the viewport this has nothing left to do and it scrolls
+        // like normal page content.
         className={pageScroll
-          ? `px-4 pt-3 space-y-3 ${composerOpen ? 'pb-36' : 'pb-24'}`
+          ? `flex-1 flex flex-col justify-end px-4 pt-3 space-y-3 ${composerOpen ? 'pb-36' : 'pb-24'}`
           : `flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pt-3 space-y-3 ${composerOpen ? 'pb-36' : 'pb-24'}`}
       >
         {pinnedCard}

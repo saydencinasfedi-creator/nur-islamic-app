@@ -23,7 +23,7 @@ public class MainActivity extends BridgeActivity {
         // height so the web layer can keep content clear of it.
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         super.onCreate(savedInstanceState);
-        hideStatusBar();
+        hideSystemBars();
         // The fading scroll-position indicator on scroll is drawn natively by the Android
         // WebView itself (not a CSS `::-webkit-scrollbar`, which is already hidden in
         // index.css) — has to be turned off here instead.
@@ -37,15 +37,17 @@ public class MainActivity extends BridgeActivity {
         // Android re-shows system bars whenever the window regains focus (e.g. after the
         // keyboard closes), so re-hide every time instead of only once in onCreate.
         if (hasFocus) {
-            hideStatusBar();
+            hideSystemBars();
         }
     }
 
-    private void hideStatusBar() {
+    private void hideSystemBars() {
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
-        // Swiping from the top reveals it temporarily; it hides itself again afterwards
-        // instead of staying shown until dismissed.
+        // Swiping from the top or bottom reveals the bars temporarily; they hide
+        // themselves again afterwards instead of staying shown until dismissed.
         controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-        controller.hide(WindowInsetsCompat.Type.statusBars());
+        // Both the status bar AND the on-screen nav buttons (3-button nav; gesture nav
+        // has no bar to hide here) — true fullscreen/immersive like most media apps.
+        controller.hide(WindowInsetsCompat.Type.systemBars());
     }
 }
