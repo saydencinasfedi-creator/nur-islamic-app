@@ -23,7 +23,7 @@ const DMThreadView: React.FC<Props> = ({ threadId, otherProfile, onBack, onGuest
 
   return (
     <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100dvh - env(safe-area-inset-top, 0px))' }}>
-      <header className="relative z-10 flex items-center gap-3 p-6 shrink-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm">
+      <header className="relative z-10 flex items-center gap-3 p-6 shrink-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/5">
         <button onClick={onBack} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
           <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
         </button>

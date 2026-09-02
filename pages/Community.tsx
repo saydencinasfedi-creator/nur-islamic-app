@@ -70,7 +70,7 @@ const Community: React.FC<CommunityProps> = ({ navigate, setNavHidden }) => {
 
   const [view, setView] = useState<View>('top');
   const [topTab, setTopTab] = useState<TopTab>('home');
-  const [circleTab, setCircleTab] = useState<CircleTab>('info');
+  const [circleTab, setCircleTab] = useState<CircleTab>('chat');
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [activeChallengeId, setActiveChallengeId] = useState<string | null>(null);
   const [activeReflectionId, setActiveReflectionId] = useState<string | null>(null);
@@ -116,7 +116,7 @@ const Community: React.FC<CommunityProps> = ({ navigate, setNavHidden }) => {
       return;
     }
     const target = consumePendingCommunityTarget();
-    if (target) { setActiveGroupId(target.groupId); setCircleTab('info'); setView('circle'); }
+    if (target) { setActiveGroupId(target.groupId); setCircleTab('chat'); setView('circle'); }
   }, [bypassed]);
 
   // ---- invite link (com.fedi.nur://invite/<code>) tapped ----
@@ -159,7 +159,7 @@ const Community: React.FC<CommunityProps> = ({ navigate, setNavHidden }) => {
 
   const refreshMyGroups = () => community.listMyGroups().then(setMyGroups).catch(() => {});
 
-  const openCircle = (id: string, tab: CircleTab = 'info') => { setActiveGroupId(id); setCircleTab(tab); setView('circle'); };
+  const openCircle = (id: string, tab: CircleTab = 'chat') => { setActiveGroupId(id); setCircleTab(tab); setView('circle'); };
   const openChallenge = (id: string, from: 'top' | 'circle') => { challengeReturn.current = from; setActiveChallengeId(id); setView('challenge'); };
 
   if (bypassed) {
@@ -359,7 +359,7 @@ const TopTabs: React.FC<{ value: TopTab; onChange: (t: TopTab) => void }> = ({ v
     { id: 'duas', key: 'community.tabDuas' },
   ];
   return (
-    <div className="flex gap-3 px-6 pb-6 overflow-x-auto no-scrollbar scroll-smooth">
+    <div className="flex gap-3 px-6 pt-4 pb-6 overflow-x-auto no-scrollbar scroll-smooth">
       {tabs.map(tab => (
         <button
           key={tab.id}
@@ -387,7 +387,7 @@ const SubScreen: React.FC<{ title: string; onBack: () => void; children: React.R
       <h1 className="text-xl font-bold tracking-tight flex-1 truncate">{title}</h1>
       {right}
     </header>
-    <div className="flex-1">{children}</div>
+    <div className="flex-1 pt-4">{children}</div>
   </div>
 );
 
@@ -696,11 +696,11 @@ const CircleDetail: React.FC<{
 
   const ic = circleIcon(group);
   const tabs: { id: CircleTab; key: TranslationKey }[] = [
-    { id: 'info', key: 'community.tabInfo' },
     { id: 'chat', key: 'community.tabChat' },
     { id: 'reflections', key: 'community.tabReflections' },
     { id: 'challenges', key: 'community.tabCircleChallenges' },
     { id: 'members', key: 'community.tabMembers' },
+    { id: 'info', key: 'community.tabInfo' },
   ];
   const visibleTabs = isMember ? tabs : tabs.filter(x => x.id === 'info');
 
@@ -712,7 +712,7 @@ const CircleDetail: React.FC<{
       style={isChatTab ? { height: 'calc(100dvh - env(safe-area-inset-top, 0px))' } : undefined}
     >
       {!isChatTab && <SafeAreaTopFiller />}
-      <header className={`z-10 flex items-center gap-3 px-6 py-3 shrink-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm ${isChatTab ? 'relative' : 'sticky sticky-safe-top border-b border-gray-100 dark:border-white/5'}`}>
+      <header className={`z-10 flex items-center gap-3 px-6 py-3 shrink-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/5 ${isChatTab ? 'relative' : 'sticky sticky-safe-top'}`}>
         <button onClick={onBack} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0">
           <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
         </button>
@@ -727,7 +727,7 @@ const CircleDetail: React.FC<{
         )}
       </header>
 
-      <div className="flex gap-2 px-6 pb-4 overflow-x-auto no-scrollbar shrink-0">
+      <div className="flex gap-2 px-6 pt-4 pb-4 overflow-x-auto no-scrollbar shrink-0">
         {visibleTabs.map(x => (
           <button key={x.id} onClick={() => onTab(x.id)} className={`h-9 shrink-0 px-4 rounded-full text-sm font-medium transition-colors ${tab === x.id ? 'bg-primary text-background-dark font-bold' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300'}`}>
             {t(x.key)}

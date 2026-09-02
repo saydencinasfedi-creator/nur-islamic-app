@@ -87,7 +87,7 @@ const GroupReflectionEditor: React.FC<Props> = ({ groupId, existing, prefillRef,
         </button>
       </header>
 
-      <div className="flex-1 px-6 pb-10 space-y-4">
+      <div className="flex-1 px-6 pt-4 pb-10 space-y-4">
         <input
           value={title}
           onChange={e => setTitle(e.target.value)}
