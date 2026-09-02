@@ -72,9 +72,9 @@ export interface PushPayload {
   data: Record<string, string>;
 }
 
-// Returns 'ok', 'invalid_token' (caller should delete it), or 'error' (transient —
-// leave the token in place, it might work next time).
-export const sendPush = async (sa: ServiceAccount, push: PushPayload): Promise<'ok' | 'invalid_token' | 'error'> => {
+// Returns 'ok', 'invalid_token' (caller should delete it), or the raw FCM error
+// text (transient — leave the token in place, it might work next time).
+export const sendPush = async (sa: ServiceAccount, push: PushPayload): Promise<string> => {
   const accessToken = await mintAccessToken(sa);
   const res = await fetch(`https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`, {
     method: 'POST',
@@ -93,6 +93,5 @@ export const sendPush = async (sa: ServiceAccount, push: PushPayload): Promise<'
   // UNREGISTERED / INVALID_ARGUMENT on a stale token — FCM's documented way of
   // saying "this token will never work again, stop trying".
   if (res.status === 404 || /UNREGISTERED|INVALID_ARGUMENT/.test(text)) return 'invalid_token';
-  console.warn('[push-on-new-message] FCM send failed:', res.status, text);
-  return 'error';
+  return `error ${res.status}: ${text}`;
 };

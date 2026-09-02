@@ -34,10 +34,14 @@ Deno.serve(async req => {
     return new Response('bad request', { status: 400 });
   }
 
+  // The trigger ignores this response (fire-and-forget) — it's diagnostic-only, and
+  // readable after the fact via `select content from net._http_response order by id
+  // desc limit 1;` since there's no CLI command to tail this function's own logs.
+  const ok = (body: Record<string, unknown>) => new Response(JSON.stringify(body), { status: 200 });
+
   const sa = JSON.parse(Deno.env.get('FCM_SERVICE_ACCOUNT') ?? '{}');
   if (!sa.project_id || !sa.client_email || !sa.private_key) {
-    console.error('[push-on-new-message] FCM_SERVICE_ACCOUNT secret is not set — nothing to send with.');
-    return new Response('ok', { status: 200 }); // don't fail the trigger's fire-and-forget call
+    return ok({ stage: 'no_service_account' });
   }
 
   const supabase = createClient(
@@ -67,7 +71,7 @@ Deno.serve(async req => {
       recipientIds = [otherUserId];
     }
   }
-  if (!recipientIds.length) return new Response('ok', { status: 200 });
+  if (!recipientIds.length) return ok({ stage: 'no_recipients' });
 
   // 2. Drop anyone who's muted this specific circle/DM.
   const { data: muted } = await supabase
@@ -79,14 +83,14 @@ Deno.serve(async req => {
     .in('user_id', recipientIds);
   const mutedIds = new Set((muted ?? []).map(r => r.user_id));
   const finalRecipients = recipientIds.filter(id => !mutedIds.has(id));
-  if (!finalRecipients.length) return new Response('ok', { status: 200 });
+  if (!finalRecipients.length) return ok({ stage: 'all_muted', recipientIds });
 
   // 3. Their devices.
   const { data: tokenRows } = await supabase
     .from('push_tokens')
     .select('user_id, token')
     .in('user_id', finalRecipients);
-  if (!tokenRows?.length) return new Response('ok', { status: 200 });
+  if (!tokenRows?.length) return ok({ stage: 'no_tokens', finalRecipients });
 
   // 4. Author's name for the notification title.
   const { data: author } = await supabase
@@ -104,14 +108,20 @@ Deno.serve(async req => {
   };
 
   const staleTokens: string[] = [];
-  await Promise.all(tokenRows.map(async row => {
-    const result = await sendPush(sa, { token: row.token, title, body, data }).catch(() => 'error' as const);
+  const results = await Promise.all(tokenRows.map(async row => {
+    let result: string;
+    try {
+      result = await sendPush(sa, { token: row.token, title, body, data });
+    } catch (err) {
+      result = `error: ${err instanceof Error ? err.message : String(err)}`;
+    }
     if (result === 'invalid_token') staleTokens.push(row.token);
+    return { userId: row.user_id, result };
   }));
 
   if (staleTokens.length) {
     await supabase.from('push_tokens').delete().in('token', staleTokens);
   }
 
-  return new Response('ok', { status: 200 });
+  return ok({ stage: 'sent', title, body, results });
 });
